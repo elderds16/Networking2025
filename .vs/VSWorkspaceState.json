@@ -1,9 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\client",
-    "\\server"
+    "\\client"
   ],
-  "SelectedNode": "\\Setting.json",
+  "SelectedNode": "\\udp.sln",
   "PreviewInSolutionExplorer": false
 }

@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\client\\Program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:client\\Program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\Setting.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Setting.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
@@ -11,8 +15,16 @@
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:server\\Program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\client\\Program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:client\\Program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\server\\DNSrecords.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:server\\DNSrecords.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\client\\Data.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:client\\Data.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\server\\server.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:server\\server.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,46 +34,84 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\server\\Program.cs",
               "RelativeDocumentMoniker": "server\\Program.cs",
               "ToolTip": "C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\server\\Program.cs",
               "RelativeToolTip": "server\\Program.cs",
-              "ViewState": "AgIAADkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAjAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-03-23T15:51:16.444Z",
-              "IsPinned": true,
+              "WhenOpened": "2025-03-23T16:47:52.35Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "DNSrecords.json",
+              "DocumentMoniker": "C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\server\\DNSrecords.json",
+              "RelativeDocumentMoniker": "server\\DNSrecords.json",
+              "ToolTip": "C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\server\\DNSrecords.json",
+              "RelativeToolTip": "server\\DNSrecords.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-03-23T16:41:50.483Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "Setting.json",
-              "DocumentMoniker": "C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\Setting.json",
-              "RelativeDocumentMoniker": "Setting.json",
-              "ToolTip": "C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\Setting.json",
-              "RelativeToolTip": "Setting.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-03-23T15:54:37.49Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\client\\Program.cs",
               "RelativeDocumentMoniker": "client\\Program.cs",
               "ToolTip": "C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\client\\Program.cs",
               "RelativeToolTip": "client\\Program.cs",
+              "ViewState": "AgIAAC0AAAAAAAAAAAAAADsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-23T16:24:07.635Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Data.cs",
+              "DocumentMoniker": "C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\client\\Data.cs",
+              "RelativeDocumentMoniker": "client\\Data.cs",
+              "ToolTip": "C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\client\\Data.cs",
+              "RelativeToolTip": "client\\Data.cs",
               "ViewState": "AgIAAA8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-03-23T15:50:53.346Z",
+              "WhenOpened": "2025-03-23T16:27:28.5Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "server.csproj",
+              "DocumentMoniker": "C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\server\\server.csproj",
+              "RelativeDocumentMoniker": "server\\server.csproj",
+              "ToolTip": "C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\server\\server.csproj",
+              "RelativeToolTip": "server\\server.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-03-23T16:26:52.976Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Setting.json",
+              "DocumentMoniker": "C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\Setting.json",
+              "RelativeDocumentMoniker": "Setting.json",
+              "ToolTip": "C:\\Users\\Elder\\OneDrive\\Documenten\\SCHOOL\\JAAR 2\\Networking\\AssignmentTemplateStudent\\AssignmentTemplateStudent\\Setting.json",
+              "RelativeToolTip": "Setting.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-03-23T16:22:30.751Z",
               "EditorCaption": ""
             }
           ]
