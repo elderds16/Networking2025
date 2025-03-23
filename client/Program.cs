@@ -97,38 +97,7 @@ class ClientUDP
         }
 
 
-        // TODO: [Create and send DNSLookup Message]
-        private static List<Message> CreateDnsLookupMessages()
-        {
-            return new List<Message>
-            {
-                new Message
-                {
-                    MsgId = 101,
-                    MsgType = MessageType.DNSLookup,
-                    Content = new DNSRecord { Type = "A", Name = "www.test.com" }
-                },
-                new Message
-                {
-                    MsgId = 102,
-                    MsgType = MessageType.DNSLookup,
-                    Content = new DNSRecord { Type = "MX", Name = "example.com" }
-                },
-                new Message
-                {
-                    MsgId = 103,
-                    MsgType = MessageType.DNSLookup,
-                    Content = "unknown.domain"
-                },
-                new Message
-                {
-                    MsgId = 104,
-                    MsgType = MessageType.DNSLookup,
-                    Content = new { Type = "A", Value = "invalid.com" }
-                }
-            };
-        }
-
+        // TODO: [Create and send DNSLookup Message]    
         private static void SendDnsLookupMessage(Message dnsMessage)
         {
             SendMessage(dnsMessage);
@@ -187,6 +156,37 @@ class ClientUDP
         {
             Log($"Client: Expected End but got {end.MsgType}");
         }
+    }
+
+    private static List<Message> CreateDnsLookupMessages()
+    {
+        return new List<Message>
+            {
+                new Message
+                {
+                    MsgId = 101,
+                    MsgType = MessageType.DNSLookup,
+                    Content = new DNSRecord { Type = "A", Name = "www.test.com" }
+                },
+                new Message
+                {
+                    MsgId = 102,
+                    MsgType = MessageType.DNSLookup,
+                    Content = new DNSRecord { Type = "MX", Name = "example.com" }
+                },
+                new Message
+                {
+                    MsgId = 103,
+                    MsgType = MessageType.DNSLookup,
+                    Content = "unknown.domain"
+                },
+                new Message
+                {
+                    MsgId = 104,
+                    MsgType = MessageType.DNSLookup,
+                    Content = new { Type = "A", Value = "invalid.com" }
+                }
+            };
     }
 
 
