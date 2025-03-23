@@ -39,7 +39,6 @@ class ClientUDP
         static string configContent = File.ReadAllText(configFile);
         static Setting? setting = JsonSerializer.Deserialize<Setting>(configContent);
 
-
         public static void start()
         {
             try
@@ -47,8 +46,7 @@ class ClientUDP
                 Initialize();
                 SendHello();
                 ReceiveWelcome();
-                ProcessAllDnsLookups();  
-
+                ProcessAllDnsLookups(); 
                 ReceiveEnd();
         }
             catch (Exception e)
@@ -96,7 +94,6 @@ class ClientUDP
             }
         }
 
-
         // TODO: [Create and send DNSLookup Message]    
         private static void SendDnsLookupMessage(Message dnsMessage)
         {
@@ -111,8 +108,6 @@ class ClientUDP
             Log($"Client: Received -> Type: {reply.MsgType}, MsgId: {reply.MsgId}, Content: {reply.Content}");
             return reply;
         }
-
-
 
         //TODO: [Send Acknowledgment to Server]
         private static void SendAck(int originalMsgId)
