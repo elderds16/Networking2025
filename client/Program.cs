@@ -31,111 +31,131 @@ public class Setting
 
 class ClientUDP
 {
-        private static Socket? _udpSocket;
-        private static EndPoint? _serverEndPoint;
-        
-        //TODO: [Deserialize Setting.json]
-        static string configFile = @"../Setting.json";
-        static string configContent = File.ReadAllText(configFile);
-        static Setting? setting = JsonSerializer.Deserialize<Setting>(configContent);
+    private static Socket? _udpSocket;
+    private static EndPoint? _serverEndPoint;
 
-        public static void start()
+    //TODO: [Deserialize Setting.json]
+    static string configFile = @"../Setting.json";
+    static string configContent = File.ReadAllText(configFile);
+    static Setting? setting = JsonSerializer.Deserialize<Setting>(configContent);
+
+    public static void start()
+    {
+        try
         {
-            try
-            {
-                Initialize();
-                SendHello();
-                ReceiveWelcome();
-                ProcessAllDnsLookups(); 
-                ReceiveEnd();
+            Initialize();
+            SendHello();
+            ReceiveWelcome();
+            ProcessAllDnsLookups();
+            ReceiveEnd();
         }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Error: {e.Message}");
-            }
-        }
-
-         //TODO: [Create endpoints and socket]
-         private void Initialize() {
-
-            _udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            _serverEndPoint = new IPEndPoint(IPAddress.Parse(setting!.ServerIPAddress!), setting.ServerPortNumber);
-            IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Parse(setting.ClientIPAddress!), setting.ClientPortNumber);
-            _udpSocket.Bind(clientEndPoint);
-
-            Log(" Socket initialized and bound to client endpoint.");
-         }
-
-        //TODO: [Create and send HELLO]
-        private static void SendHello()
+        catch (Exception e)
         {
-            var message = new Message
-            {
-                MsgId = 1,
-                MsgType = MessageType.Hello,
-                Content = "Hello from client"
-            };
-
-            SendMessage(message);
-            Log($"Client: Sent -> Type: {message.MsgType}, content: {message.Content}");
+            Console.WriteLine($"Error: {e.Message}");
         }
+    }
 
-        //TODO: [Receive and print Welcome from server]
-        private static void ReceiveWelcome()
+    //TODO: [Create endpoints and socket]
+    private void Initialize()
+    {
+        _udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        _serverEndPoint = new IPEndPoint(IPAddress.Parse(setting!.ServerIPAddress!), setting.ServerPortNumber);
+        IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Parse(setting.ClientIPAddress!), setting.ClientPortNumber);
+        _udpSocket.Bind(clientEndPoint);
+
+        Logging(" Socket initialized and bound to client endpoint.");
+    }
+
+    //TODO: [Create and send HELLO]
+    private static void SendHello()
+    {
+        var message = new Message
         {
-            var message = ReceiveMessage();
-            if (message.MsgType == MessageType.Welcome)
-            {
-                Log($"Client: Received -> Type: {message.MsgType}, content: {message.Content}");
-            }
-            else
-            {
-                Log($"Client: Received unexpected message, expected a welcome message -> Type: {message.MsgType}, content: {message.Content}");
-            }
-        }
+            MsgId = 1,
+            MsgType = MessageType.Hello,
+            Content = "Hello from client"
+        };
 
-        // TODO: [Create and send DNSLookup Message]    
-        private static void SendDnsLookupMessage(Message dnsMessage)
+        SendMessage(message);
+        Logging($"Client: Sent -> Type: {message.MsgType}, content: {message.Content}");
+    }
+
+    //TODO: [Receive and print Welcome from server]
+    private static void ReceiveWelcome()
+    {
+        var message = ReceiveMessage();
+        if (message.MsgType == MessageType.Welcome)
         {
-            SendMessage(dnsMessage);
-            Log($"Client: Sent {dnsMessage.MsgType} -> MsgId: {dnsMessage.MsgId}");
+            Logging($"Client: Received -> Type: {message.MsgType}, content: {message.Content}");
         }
-
-        //TODO: [Receive and print DNSLookupReply from server]
-        private static Message ReceiveDnsReply()
+        else
         {
-            var reply = ReceiveMessage();
-            Log($"Client: Received -> Type: {reply.MsgType}, MsgId: {reply.MsgId}, Content: {reply.Content}");
-            return reply;
+            Logging($"Client: Received unexpected message, expected a welcome message -> Type: {message.MsgType}, content: {message.Content}");
         }
+    }
 
-        //TODO: [Send Acknowledgment to Server]
-        private static void SendAck(int originalMsgId)
+    // TODO: [Create and send DNSLookup Message]    
+    private static void SendDnsLookupMessage(Message dnsMessage)
+    {
+        SendMessage(dnsMessage);
+        Logging($"Client: Sent {dnsMessage.MsgType} -> MsgId: {dnsMessage.MsgId}");
+    }
+
+    //TODO: [Receive and handle reply with Ack]
+    private static void ReceiveAndHandleMessage(int expectedMsgId)
+    {
+        var message = ReceiveMessage();
+
+        switch (message.MsgType)
         {
-            var ack = new Message
-            {
-                MsgId = originalMsgId + 1000,
-                MsgType = MessageType.Ack,
-                Content = originalMsgId
-            };
+            case MessageType.DNSLookupReply:
+                Logging($"Client: Received -> DNSLookupReply, MsgId: {message.MsgId}, Content: {message.Content}");
+                break;
 
-            SendMessage(ack);
-            Log($"Client: Sent Ack -> for MsgId: {originalMsgId}");
+            case MessageType.Error:
+                Logging($"Client: Received -> Error, MsgId: {message.MsgId}, Content: {message.Content}");
+                break;
+
+            case MessageType.End:
+                Logging("Client: Received End -> closing connection.");
+                break;
+
+            default:
+                throw new InvalidOperationException($"Unexpected message type received: {message.MsgType}");
         }
 
-
-        // TODO: [Send next DNSLookup to server]
-        private static void ProcessAllDnsLookups()
+        // Altijd Ack sturen (behalve bij End)
+        if (message.MsgType != MessageType.End)
         {
-            var lookups = CreateDnsLookupMessages();
-
-            foreach (var msg in lookups)
-            {
-                SendDnsLookupMessage(msg);
-                var reply = ReceiveDnsReply();
-                SendAck(msg.MsgId);
-            }
+            SendAck(expectedMsgId);
         }
+    }
+
+    //TODO: [Send Acknowledgment to Server]
+    private static void SendAck(int originalMsgId)
+    {
+        var ack = new Message
+        {
+            MsgId = originalMsgId + 1000,
+            MsgType = MessageType.Ack,
+            Content = originalMsgId
+        };
+
+        SendMessage(ack);
+        Logging($"Client: Sent Ack -> for MsgId: {originalMsgId}");
+    }
+
+    // TODO: [Send next DNSLookup to server]
+    private static void ProcessAllDnsLookups()
+    {
+        var lookups = CreateDnsLookupMessages();
+
+        foreach (var msg in lookups)
+        {
+            SendDnsLookupMessage(msg);
+            ReceiveAndHandleMessage(msg.MsgId);
+        }
+    }
 
     // repeat the process until all DNSLoopkups (correct and incorrect onces) are sent to server and the replies with DNSLookupReply
 
@@ -145,11 +165,11 @@ class ClientUDP
         var end = ReceiveMessage();
         if (end.MsgType == MessageType.End)
         {
-            Log("Client: Received End -> closing client.");
+            Logging("Client: Received End -> closing client.");
         }
         else
         {
-            Log($"Client: Expected End but got {end.MsgType}");
+            Logging($"Client: Expected End but got {end.MsgType}");
         }
     }
 
@@ -184,31 +204,39 @@ class ClientUDP
             };
     }
 
-
     private static string SerializeMessage(Message message)
+    {
+        return JsonSerializer.Serialize(message);
+    }
+
+    private static void SendMessage(Message message)
+    {
+        var data = Encoding.UTF8.GetBytes(SerializeMessage(message));
+        _udpSocket!.SendTo(data, _serverEndPoint!);
+    }
+
+    private static Message ReceiveMessage()
+    {
+        var buffer = new byte[1024];
+        EndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
+        int receivedBytes = _udpSocket!.ReceiveFrom(buffer, ref remoteEP);
+        var jsonString = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
+        return DeserializeMessage(jsonString);
+    }
+
+    private static Message DeserializeMessage(string data)
+    {
+        var message = JsonSerializer.Deserialize<Message>(data);
+
+        if (message == null)
         {
-            return JsonSerializer.Serialize(message);
+            throw new JsonException("Deserialization failed. Received an invalid message format.");
         }
 
-        private static void SendMessage(Message message)
-        {
-            var data = Encoding.UTF8.GetBytes(SerializeMessage(message));
-            _udpSocket!.SendTo(data, _serverEndPoint!);
-        }
+        return message;
+    }
 
-        private static Message DeserializeMessage(string data)
-        {
-            var message = JsonSerializer.Deserialize<Message>(data);
-
-            if (message == null)
-            {
-                throw new JsonException("Deserialization failed. Received an invalid message format.");
-            }
-
-            return message;
-        }
-
-    private static void Log(string message)
+    private static void Logging(string message)
     {
         if (!string.IsNullOrEmpty(message))
         {
@@ -216,12 +244,7 @@ class ClientUDP
         }
         else
         {
-            Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [Empty or null message passed to Log()]");
+            Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Message is empty!");
         }
     }
-
-
-
-
-
 }
