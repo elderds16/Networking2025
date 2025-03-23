@@ -19,6 +19,9 @@ class Program
     }
 }
 
+// StudentNumbers: 0864154, 0907615
+// StudentNames: Elder dos Santos, Yasin Mesdar
+
 public class Setting
 {
     public int ServerPortNumber { get; set; }

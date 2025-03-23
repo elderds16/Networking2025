@@ -5,6 +5,7 @@
 *.userosscache
 *.sln.docstates
 
+#
 # Build resultaten
 bin/
 obj/
