@@ -51,7 +51,11 @@ class ClientUDP
         }
         catch (Exception e)
         {
-            Console.WriteLine($"Error: {e.Message}");
+            HandleError(e);
+        }
+        finally
+        {
+            _udpSocket?.Dispose();
         }
     }
 
@@ -106,6 +110,18 @@ class ClientUDP
     {
         var message = ReceiveMessage();
 
+        if (message.MsgType == MessageType.Ack)
+        {
+            if (int.TryParse(message.Content?.ToString(), out int ackId))
+            {
+                Logging($"Client: Received valid Ack for MsgId {ackId}");
+            }
+            else
+            {
+                Logging("Client: Received Ack with invalid content.");
+            }
+        }
+
         switch (message.MsgType)
         {
             case MessageType.DNSLookupReply:
@@ -121,15 +137,15 @@ class ClientUDP
                 break;
 
             default:
-                throw new InvalidOperationException($"Unexpected message type received: {message.MsgType}");
+                throw new MessageTypeMismatchException($"Unexpected message type received: {message.MsgType}");
         }
 
-        // Altijd Ack sturen (behalve bij End)
         if (message.MsgType != MessageType.End)
         {
             SendAck(expectedMsgId);
         }
     }
+
 
     //TODO: [Send Acknowledgment to Server]
     private static void SendAck(int originalMsgId)
@@ -217,22 +233,42 @@ class ClientUDP
 
     private static Message ReceiveMessage()
     {
-        var buffer = new byte[1024];
-        EndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
-        int receivedBytes = _udpSocket!.ReceiveFrom(buffer, ref remoteEP);
-        var jsonString = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
-        return DeserializeMessage(jsonString);
+        try
+        {
+            var buffer = new byte[1024];
+            EndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
+            int receivedBytes = _udpSocket!.ReceiveFrom(buffer, ref remoteEP);
+            var jsonString = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
+            var message = DeserializeMessage(jsonString);
+
+            if (message.MsgType == MessageType.Error)
+            {
+                throw new ServerResponseException($"Received Error message: {message.Content}");
+            }
+
+            return message;
+        }
+        catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut)
+        {
+            throw new TimeoutException("Timeout: Did not receive message from server in time.");
+        }
+        catch (SocketException ex) when (ex.SocketErrorCode == SocketError.MessageSize)
+        {
+            throw new InvalidOperationException("Message too large for buffer.");
+        }
+        catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionReset)
+        {
+            throw new InvalidOperationException("Server not available or forcibly closed the connection.");
+        }
     }
 
     private static Message DeserializeMessage(string data)
     {
         var message = JsonSerializer.Deserialize<Message>(data);
-
         if (message == null)
         {
             throw new JsonException("Deserialization failed. Received an invalid message format.");
         }
-
         return message;
     }
 
@@ -247,4 +283,34 @@ class ClientUDP
             Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Message is empty!");
         }
     }
+
+    private static void HandleError(Exception ex)
+    {
+        Logging($"Client: Error {ex.GetType().Name} -> {ex.Message}");
+
+        try
+        {
+            var errorMsg = new Message
+            {
+                MsgId = 9999,
+                MsgType = MessageType.Error,
+                Content = ex.Message
+            };
+            SendMessage(errorMsg);
+        }
+        catch
+        {
+            Logging("Client: Failed to send error message to server.");
+        }       
+    }
+}
+
+public class MessageTypeMismatchException : Exception
+{
+    public MessageTypeMismatchException(string message) : base(message) { }
+}
+
+public class ServerResponseException : Exception
+{
+    public ServerResponseException(string message) : base(message) { }
 }
