@@ -1,1 +1,60 @@
-.vs
+﻿# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build resultaten
+bin/
+obj/
+Debug/
+Release/
+*.exe
+*.dll
+*.pdb
+*.cache
+*.ilk
+*.log
+
+# Copilot / VS Code AI
+**/CopilotIndices/
+**/SemanticSymbols*
+**/CodeChunks*
+.vscode/
+
+# macOS troep (voor als je op school/werk op Mac werkt)
+.DS_Store
+
+# Backup/lock bestanden
+*.bak
+*.tmp
+*.lock
+
+# NuGet packages
+*.nupkg
+*.snupkg
+*.nuspec
+packages/
+project.lock.json
+
+# IDE settings die je niet wil delen
+*.vspscc
+*.vssscc
+*.orig
+
+# JetBrains Rider/Resharper (voor de zekerheid)
+.idea/
+*.DotSettings.user
+
+# Git zelf
+*.rej
+*.patch
+*.diff
+
+# Node.js dingen (voor als je ooit JS toevoegt)
+node_modules/
+
+# Python dingen (voor als je per ongeluk een script maakt 😄)
+__pycache__/
+*.py[cod]
