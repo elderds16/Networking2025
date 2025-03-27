@@ -38,6 +38,8 @@ class ServerUDP
     static EndPoint clientEndpoint = new IPEndPoint(IPAddress.Parse(setting.ClientIPAddress), setting.ClientPortNumber);
 
     // TODO: [Read the JSON file and return the list of DNSRecords]
+    static string DNSRecordsFile = File.ReadAllText("./DNSrecords.json");
+    static List<DNSRecord> DNSRecords = JsonSerializer.Deserialize<List<DNSRecord>>(DNSRecordsFile);
 
     public static void start()
     {
@@ -56,18 +58,34 @@ class ServerUDP
         {
             // TODO:[Receive and print a received Message from the client] && [Receive and print Hello]
             Message receivedMessage = MessageService.receiveMessage(ServerSocket, buffer);
-            Console.WriteLine($"[Received Message] type: {receivedMessage.MsgType}, content {receivedMessage.Content}");
+            Console.WriteLine($"[Received Message] Type: {receivedMessage.MsgType}, Content: {receivedMessage.Content}");
 
             if (receivedMessage.MsgType == MessageType.Hello)
             {
-                string content = "Hello from client";
-                byte[] sendMessage = MessageService.serializeMessage(MessageType.Welcome, content);
+                string content = "Welcome from server";
+                byte[] sendMessage = MessageService.serializeMessage(1, MessageType.Welcome, content);
                 MessageService.sendMessage(ServerSocket, sendMessage, MessageType.Welcome, content);
             }
+
+            if (receivedMessage.MsgType == MessageType.DNSLookup)
+            {
+                try
+                {
+                    DNSRecord DNSrecord = JsonSerializer.Deserialize<DNSRecord>(receivedMessage.Content.ToString());
+
+                    if(DNSRecords.Any(record => record.Type == DNSrecord.Type && record.Name == DNSrecord.Name))
+                    {
+                        string content = "Hello from client";
+                        byte[] sendMessage = MessageService.serializeMessage(receivedMessage.MsgId, MessageType.DNSLookupReply, content);
+                        MessageService.sendMessage(ServerSocket, sendMessage, MessageType.DNSLookupReply, receivedMessage.Content.ToString());
+                    } 
+                }
+                catch
+                {
+                    Console.WriteLine("test");
+                }
+            }
         }
-
-
-
 
 
         // TODO:[Send Welcome to the client]
@@ -97,11 +115,11 @@ public static class MessageService
 {
     public static EndPoint clientEndpoint = null;
 
-    public static byte[] serializeMessage(MessageType messageType, object content)
+    public static byte[] serializeMessage(int id, MessageType messageType, object content)
     {
         Message message = new();
 
-        message.MsgId = 1001;
+        message.MsgId = id;
         message.MsgType = messageType;
         message.Content = content;
 
