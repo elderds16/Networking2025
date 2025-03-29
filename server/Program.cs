@@ -58,7 +58,7 @@ class ServerUDP
         {
             // TODO:[Receive and print a received Message from the client] && [Receive and print Hello]
             Message receivedMessage = MessageService.receiveMessage(ServerSocket, buffer);
-            Console.WriteLine($"[Received Message] Type: {receivedMessage.MsgType}, Content: {receivedMessage.Content}");
+            Console.WriteLine($"[Incoming] Type: {receivedMessage.MsgType}, Content: {receivedMessage.Content}");
 
             if (receivedMessage.MsgType == MessageType.Hello)
             {
@@ -75,14 +75,36 @@ class ServerUDP
 
                     if(DNSRecords.Any(record => record.Type == DNSrecord.Type && record.Name == DNSrecord.Name))
                     {
-                        string content = "Hello from client";
-                        byte[] sendMessage = MessageService.serializeMessage(receivedMessage.MsgId, MessageType.DNSLookupReply, content);
-                        MessageService.sendMessage(ServerSocket, sendMessage, MessageType.DNSLookupReply, receivedMessage.Content.ToString());
-                    } 
+                        DNSRecord existingRecord = DNSRecords.Find(record => record.Type == DNSrecord.Type && record.Name == DNSrecord.Name);
+    
+                        DNSrecord.Value = existingRecord.Value;
+                        DNSrecord.TTL = existingRecord.TTL;
+                        DNSrecord.Priority = existingRecord.Priority;
+
+                        byte[] sendMessage = MessageService.serializeMessage(receivedMessage.MsgId, MessageType.DNSLookupReply, DNSrecord);
+                        MessageService.sendDNSRecord(ServerSocket, sendMessage, MessageType.DNSLookupReply, DNSrecord);
+                    }
+                    else
+                    {
+                        byte[] sendMessage = MessageService.serializeMessage(receivedMessage.MsgId, MessageType.Error, DNSrecord);
+                        MessageService.sendDNSRecord(ServerSocket, sendMessage, MessageType.DNSLookupReply, DNSrecord);
+                    }
                 }
                 catch
                 {
-                    Console.WriteLine("test");
+                    if (DNSRecords.Any(record => record.Name == receivedMessage.Content.ToString()))
+                    {
+                        DNSRecord existingRecord = DNSRecords.Find(record => record.Name == receivedMessage.Content.ToString());
+
+                        byte[] sendMessage = MessageService.serializeMessage(receivedMessage.MsgId, MessageType.DNSLookupReply, existingRecord);
+                        MessageService.sendDNSRecord(ServerSocket, sendMessage, MessageType.DNSLookupReply, existingRecord);
+                    }
+                    else
+                    {
+                        string content = "Domain not found";
+                        byte[] sendMessage = MessageService.serializeMessage(receivedMessage.MsgId, MessageType.Error, content);
+                        MessageService.sendMessage(ServerSocket, sendMessage, MessageType.Error, content);
+                    }
                 }
             }
         }
@@ -131,7 +153,13 @@ public static class MessageService
     public static void sendMessage(Socket ServerSocket, byte[] sendMessage, MessageType type, string content)
     {
         ServerSocket.SendTo(sendMessage, 0, sendMessage.Length, SocketFlags.None, clientEndpoint);
-        Console.WriteLine($"[Sended message] Type: {type}, Content: {content}" );
+        Console.WriteLine($"[Outgoing] Type: {type}, Content: {content}" );
+    }
+
+    public static void sendDNSRecord(Socket ServerSocket, byte[] sendMessage, MessageType type, object content)
+    {
+        ServerSocket.SendTo(sendMessage, 0, sendMessage.Length, SocketFlags.None, clientEndpoint);
+        Console.WriteLine($"[Outgoing] Id: {1100}, Type: {type}, Content: {JsonSerializer.Serialize(content)}" );
     }
 
     public static Message extractMessage(byte[] data)
