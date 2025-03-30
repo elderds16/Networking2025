@@ -224,6 +224,7 @@ class ClientUDP
                     MsgType = MessageType.DNSLookup,
                     Content = new DNSRecord { Type = "A", Name = "", Value = "invalid.com" }
                 }
+              
             };
     }
 

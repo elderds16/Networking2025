@@ -58,7 +58,7 @@ class ServerUDP
         {
             // TODO:[Receive and print a received Message from the client] && [Receive and print Hello]
             Message receivedMessage = MessageService.receiveMessage(ServerSocket, buffer);
-            Console.WriteLine($"[Incoming] ← Type: {receivedMessage.MsgType}, Content: {receivedMessage.Content}");
+            Console.WriteLine($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: {receivedMessage.MsgType}, Content: {receivedMessage.Content}");
 
             if (receivedMessage.MsgType == MessageType.Hello)
             {
@@ -92,7 +92,6 @@ class ServerUDP
                 }
                 catch
                 {
-                    
                     if (DNSRecords.Any(record => record.Name == receivedMessage.Content.ToString()))
                     {
                         DNSRecord existingRecord = DNSRecords.Find(record => record.Name == receivedMessage.Content.ToString());
@@ -146,13 +145,13 @@ public static class MessageService
     public static void sendMessage(Socket ServerSocket, byte[] sendMessage, MessageType type, string content)
     {
         ServerSocket.SendTo(sendMessage, 0, sendMessage.Length, SocketFlags.None, clientEndpoint);
-        Console.WriteLine($"[Outgoing] → Type: {type}, Content: {content}");
+        Console.WriteLine($"[Outgoing] → MsgId: 9999, MsgType: {type}, Content: {content}");
     }
 
     public static void sendDNSRecord(Socket ServerSocket, byte[] sendMessage, MessageType type, object content)
     {
         ServerSocket.SendTo(sendMessage, 0, sendMessage.Length, SocketFlags.None, clientEndpoint);
-        Console.WriteLine($"[Outgoing] → Id: {1100}, Type: {type}, Content: {JsonSerializer.Serialize(content)}");
+        Console.WriteLine($"[Outgoing] → MsgId: 1100, MsgType: {type}, Content: {JsonSerializer.Serialize(content)}");
     }
 
     public static Message extractMessage(byte[] data)
