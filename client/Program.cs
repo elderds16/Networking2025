@@ -157,7 +157,7 @@ class ClientUDP
         };
 
         SendMessage(ack);
-        Logging($"[Outgoing] → MsgId: {ack.MsgId}, MsgType: Ack, Content: {ack.Content}");
+        Logging($"[Outgoing] → MsgId: {ack.MsgId}, MsgType: {ack.MsgType}, Content: MsgId: {ack.Content}");
     }
 
     // TODO: [Send next DNSLookup to server]
@@ -222,9 +222,9 @@ class ClientUDP
                 {
                     MsgId = 104,
                     MsgType = MessageType.DNSLookup,
-                    Content = new DNSRecord { Type = "A", Name = "", Value = "invalid.com" }
+                    Content = new DNSRecord { Type = "A", Name = "" }
                 }
-              
+
             };
     }
 
@@ -294,7 +294,16 @@ class ClientUDP
 
     private static void HandleError(Exception ex)
     {
-        Logging($"[Error] → Type: {ex.GetType().Name}, Message: {ex.Message}");
+        string direction;
+        if (ex is ServerResponseException)
+        {
+            direction = "←";
+        }
+        else
+        {
+            direction = "→";
+        }
+        Logging($"[Error] {direction} Type: {ex.GetType().Name}, Message: {ex.Message}");
 
         try
         {
