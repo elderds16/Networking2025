@@ -73,10 +73,10 @@ class ServerUDP
                 {
                     DNSRecord DNSrecord = JsonSerializer.Deserialize<DNSRecord>(receivedMessage.Content.ToString());
 
-                    if(DNSRecords.Any(record => record.Type == DNSrecord.Type && record.Name == DNSrecord.Name))
+                    if (DNSRecords.Any(record => record.Type == DNSrecord.Type && record.Name == DNSrecord.Name))
                     {
                         DNSRecord existingRecord = DNSRecords.Find(record => record.Type == DNSrecord.Type && record.Name == DNSrecord.Name);
-    
+
                         DNSrecord.Value = existingRecord.Value;
                         DNSrecord.TTL = existingRecord.TTL;
                         DNSrecord.Priority = existingRecord.Priority;
@@ -92,6 +92,7 @@ class ServerUDP
                 }
                 catch
                 {
+                    
                     if (DNSRecords.Any(record => record.Name == receivedMessage.Content.ToString()))
                     {
                         DNSRecord existingRecord = DNSRecords.Find(record => record.Name == receivedMessage.Content.ToString());
@@ -109,27 +110,19 @@ class ServerUDP
             }
         }
 
-
         // TODO:[Send Welcome to the client]
 
-
         // TODO:[Receive and print DNSLookup]
-
 
         // TODO:[Query the DNSRecord in Json file]
 
         // TODO:[If found Send DNSLookupReply containing the DNSRecord]
 
-
-
         // TODO:[If not found Send Error]
-
 
         // TODO:[Receive Ack about correct DNSLookupReply from the client]
 
-
         // TODO:[If no further requests receieved send End to the client]
-
     }
 }
 
@@ -153,13 +146,13 @@ public static class MessageService
     public static void sendMessage(Socket ServerSocket, byte[] sendMessage, MessageType type, string content)
     {
         ServerSocket.SendTo(sendMessage, 0, sendMessage.Length, SocketFlags.None, clientEndpoint);
-        Console.WriteLine($"[Outgoing] → Type: {type}, Content: {content}" );
+        Console.WriteLine($"[Outgoing] → Type: {type}, Content: {content}");
     }
 
     public static void sendDNSRecord(Socket ServerSocket, byte[] sendMessage, MessageType type, object content)
     {
         ServerSocket.SendTo(sendMessage, 0, sendMessage.Length, SocketFlags.None, clientEndpoint);
-        Console.WriteLine($"[Outgoing] → Id: {1100}, Type: {type}, Content: {JsonSerializer.Serialize(content)}" );
+        Console.WriteLine($"[Outgoing] → Id: {1100}, Type: {type}, Content: {JsonSerializer.Serialize(content)}");
     }
 
     public static Message extractMessage(byte[] data)

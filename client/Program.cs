@@ -167,9 +167,17 @@ class ClientUDP
 
         foreach (var msg in lookups)
         {
-            SendDnsLookupMessage(msg);
-            ReceiveAndHandleMessage(msg.MsgId);
+            try
+            {
+                SendDnsLookupMessage(msg);
+                ReceiveAndHandleMessage(msg.MsgId);
+            }
+            catch (Exception ex)
+            {
+                HandleError(ex);
+            }
         }
+
     }
 
     // repeat the process until all DNSLoopkups (correct and incorrect onces) are sent to server and the replies with DNSLookupReply
@@ -214,7 +222,7 @@ class ClientUDP
                 {
                     MsgId = 104,
                     MsgType = MessageType.DNSLookup,
-                    Content = new { Type = "A", Value = "invalid.com" }
+                    Content = new DNSRecord { Type = "A", Name = "", Value = "invalid.com" }
                 }
             };
     }
