@@ -46,7 +46,7 @@ class ServerUDP
         byte[] buffer = new byte[1024];
         MessageService.clientEndpoint = clientEndpoint;
 
-        Console.WriteLine("Server starting...");
+        Console.WriteLine("[Initalizing] Server starting...");
         Console.WriteLine("");
 
         // TODO: [Create a socket and endpoints and bind it to the server IP address and port number]
@@ -56,11 +56,9 @@ class ServerUDP
 
         while (true)
         {
-
             // TODO:[Receive and print a received Message from the client] && [Receive and print Hello]
             Message receivedMessage = MessageService.receiveMessage(ServerSocket, buffer);
-            Console.WriteLine($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: {receivedMessage.MsgType}, Content: {receivedMessage.Content}");
-
+            MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: {receivedMessage.MsgType}, Content: {JsonSerializer.Serialize(receivedMessage.Content)}");
             if (receivedMessage.MsgType == MessageType.Hello)
             {
                 string content = "Welcome from server";
@@ -146,13 +144,14 @@ public static class MessageService
     public static void sendMessage(Socket ServerSocket, byte[] sendMessage, int msgId, MessageType type, string content)
     {
         ServerSocket.SendTo(sendMessage, 0, sendMessage.Length, SocketFlags.None, clientEndpoint);
-        Console.WriteLine($"[Outgoing] → MsgId: {msgId}, MsgType: {type}, Content: {content}");
+        Logging($"[Outgoing] → MsgId: {msgId}, MsgType: {type}, Content: {content}");
     }
 
     public static void sendDNSRecord(Socket ServerSocket, byte[] sendMessage, int msgId, MessageType type, object content)
     {
         ServerSocket.SendTo(sendMessage, 0, sendMessage.Length, SocketFlags.None, clientEndpoint);
-        Console.WriteLine($"[Outgoing] → MsgId: {msgId}, MsgType: {type}, Content: {JsonSerializer.Serialize(content)}");
+        Logging($"[Outgoing] → MsgId: {msgId}, MsgType: {type}, Content: {JsonSerializer.Serialize(content)}");
+
     }
 
     public static Message extractMessage(byte[] data)
@@ -170,5 +169,17 @@ public static class MessageService
         Message message = JsonSerializer.Deserialize<Message>(data);
 
         return message;
+    }
+
+    public static void Logging(string message)
+    {
+        if (!string.IsNullOrEmpty(message))
+        {
+            Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}");
+        }
+        else
+        {
+            Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Message is empty!");
+        }
     }
 }

@@ -67,7 +67,7 @@ class ClientUDP
         IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Parse(setting.ClientIPAddress!), setting.ClientPortNumber);
         _udpSocket.Bind(clientEndPoint);
 
-        Logging(" Socket initialized and bound to client endpoint.");
+        Logging("[Initializing] Socket initialized and bound to client endpoint.");
     }
 
     //TODO: [Create and send HELLO]
