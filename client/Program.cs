@@ -60,7 +60,7 @@ class ClientUDP
     }
 
     //TODO: [Create endpoints and socket]
-    private void Initialize()
+    private static void Initialize()
     {
         _udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         _serverEndPoint = new IPEndPoint(IPAddress.Parse(setting!.ServerIPAddress!), setting.ServerPortNumber);
@@ -81,7 +81,7 @@ class ClientUDP
         };
 
         SendMessage(message);
-        Logging($"Client: Sent -> Type: {message.MsgType}, content: {message.Content}");
+        Logging($"[Outgoing] → MsgId: {message.MsgId}, MsgType: {message.MsgType}, Content: {message.Content}");
     }
 
     //TODO: [Receive and print Welcome from server]
@@ -90,11 +90,11 @@ class ClientUDP
         var message = ReceiveMessage();
         if (message.MsgType == MessageType.Welcome)
         {
-            Logging($"Client: Received -> Type: {message.MsgType}, content: {message.Content}");
+            Logging($"[Incoming] ← MsgId: {message.MsgId}, MsgType: {message.MsgType}, Content: {message.Content}");
         }
         else
         {
-            Logging($"Client: Received unexpected message, expected a welcome message -> Type: {message.MsgType}, content: {message.Content}");
+            Logging($"[Incoming] ← Unexpected Message, Expected: Welcome, Got MsgId: {message.MsgId}, MsgType: {message.MsgType}, Content: {message.Content}");
         }
     }
 
@@ -102,7 +102,7 @@ class ClientUDP
     private static void SendDnsLookupMessage(Message dnsMessage)
     {
         SendMessage(dnsMessage);
-        Logging($"Client: Sent {dnsMessage.MsgType} -> MsgId: {dnsMessage.MsgId}");
+        Logging($"[Outgoing] → MsgId: {dnsMessage.MsgId}, MsgType: {dnsMessage.MsgType}, Content: {JsonSerializer.Serialize(dnsMessage.Content)}");
     }
 
     //TODO: [Receive and handle reply with Ack]
@@ -114,26 +114,26 @@ class ClientUDP
         {
             if (int.TryParse(message.Content?.ToString(), out int ackId))
             {
-                Logging($"Client: Received valid Ack for MsgId {ackId}");
+                Logging($"[Incoming] ← MsgId: {message.MsgId}, MsgType: Ack, Content: {message.Content}");
             }
             else
             {
-                Logging("Client: Received Ack with invalid content.");
+                Logging("[Incoming] ← MsgType: Ack, Content: INVALID");
             }
         }
 
         switch (message.MsgType)
         {
             case MessageType.DNSLookupReply:
-                Logging($"Client: Received -> DNSLookupReply, MsgId: {message.MsgId}, Content: {message.Content}");
+                Logging($"[Incoming] ← MsgId: {message.MsgId}, MsgType: DNSLookupReply, Content: {JsonSerializer.Serialize(message.Content)}");
                 break;
 
             case MessageType.Error:
-                Logging($"Client: Received -> Error, MsgId: {message.MsgId}, Content: {message.Content}");
+                Logging($"[Incoming] ← MsgId: {message.MsgId}, MsgType: Error, Content: {message.Content}");
                 break;
 
             case MessageType.End:
-                Logging("Client: Received End -> closing connection.");
+                Logging("[Incoming] ← MsgType: End, Action: Closing connection");
                 break;
 
             default:
@@ -146,7 +146,6 @@ class ClientUDP
         }
     }
 
-
     //TODO: [Send Acknowledgment to Server]
     private static void SendAck(int originalMsgId)
     {
@@ -158,7 +157,7 @@ class ClientUDP
         };
 
         SendMessage(ack);
-        Logging($"Client: Sent Ack -> for MsgId: {originalMsgId}");
+        Logging($"[Outgoing] → MsgId: {ack.MsgId}, MsgType: Ack, Content: {ack.Content}");
     }
 
     // TODO: [Send next DNSLookup to server]
@@ -181,11 +180,11 @@ class ClientUDP
         var end = ReceiveMessage();
         if (end.MsgType == MessageType.End)
         {
-            Logging("Client: Received End -> closing client.");
+            Logging("[Incoming] ← MsgType: End, Action: Closing client.");
         }
         else
         {
-            Logging($"Client: Expected End but got {end.MsgType}");
+            Logging($"[Incoming] ← Expected End but got MsgType: {end.MsgType}");
         }
     }
 
@@ -286,7 +285,7 @@ class ClientUDP
 
     private static void HandleError(Exception ex)
     {
-        Logging($"Client: Error {ex.GetType().Name} -> {ex.Message}");
+        Logging($"[Error] → Type: {ex.GetType().Name}, Message: {ex.Message}");
 
         try
         {
@@ -300,8 +299,8 @@ class ClientUDP
         }
         catch
         {
-            Logging("Client: Failed to send error message to server.");
-        }       
+            Logging("[Error] → Failed to send error message to server.");
+        }
     }
 }
 

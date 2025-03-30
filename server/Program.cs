@@ -58,7 +58,7 @@ class ServerUDP
         {
             // TODO:[Receive and print a received Message from the client] && [Receive and print Hello]
             Message receivedMessage = MessageService.receiveMessage(ServerSocket, buffer);
-            Console.WriteLine($"[Incoming] Type: {receivedMessage.MsgType}, Content: {receivedMessage.Content}");
+            Console.WriteLine($"[Incoming] ← Type: {receivedMessage.MsgType}, Content: {receivedMessage.Content}");
 
             if (receivedMessage.MsgType == MessageType.Hello)
             {
@@ -153,13 +153,13 @@ public static class MessageService
     public static void sendMessage(Socket ServerSocket, byte[] sendMessage, MessageType type, string content)
     {
         ServerSocket.SendTo(sendMessage, 0, sendMessage.Length, SocketFlags.None, clientEndpoint);
-        Console.WriteLine($"[Outgoing] Type: {type}, Content: {content}" );
+        Console.WriteLine($"[Outgoing] → Type: {type}, Content: {content}" );
     }
 
     public static void sendDNSRecord(Socket ServerSocket, byte[] sendMessage, MessageType type, object content)
     {
         ServerSocket.SendTo(sendMessage, 0, sendMessage.Length, SocketFlags.None, clientEndpoint);
-        Console.WriteLine($"[Outgoing] Id: {1100}, Type: {type}, Content: {JsonSerializer.Serialize(content)}" );
+        Console.WriteLine($"[Outgoing] → Id: {1100}, Type: {type}, Content: {JsonSerializer.Serialize(content)}" );
     }
 
     public static Message extractMessage(byte[] data)
