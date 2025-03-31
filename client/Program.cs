@@ -47,7 +47,7 @@ class ClientUDP
             SendHello();
             ReceiveWelcome();
             ProcessAllDnsLookups();
-            ReceiveEnd();
+            
         }
         catch (Exception e)
         {
@@ -55,6 +55,7 @@ class ClientUDP
         }
         finally
         {
+            ReceiveEnd();
             _udpSocket?.Dispose();
         }
     }
@@ -96,111 +97,6 @@ class ClientUDP
         else
         {
             Logging($"[Incoming] ← Unexpected Message, Expected: Welcome, Got MsgId: {message.MsgId}, MsgType: {message.MsgType}, Content: {message.Content}");
-        }
-    }
-
-    // TODO: [Create and send DNSLookup Message]    
-    private static void SendDnsLookupMessage(Message dnsMessage)
-    {
-        SendMessage(dnsMessage);
-        Logging($"[Outgoing] → MsgId: {dnsMessage.MsgId}, MsgType: {dnsMessage.MsgType}, Content: {JsonSerializer.Serialize(dnsMessage.Content)}");
-    }
-
-    //TODO: [Receive and handle reply with Ack]
-    private static void ReceiveAndHandleMessage(int expectedMsgId)
-    {
-        var message = ReceiveMessage();
-
-        if (message.MsgType == MessageType.Ack)
-        {
-            if (int.TryParse(message.Content?.ToString(), out int ackId))
-            {
-                Logging($"[Incoming] ← MsgId: {message.MsgId}, MsgType: Ack, Content: {message.Content}");
-            }
-            else
-            {
-                Logging("[Incoming] ← MsgType: Ack, Content: INVALID");
-            }
-        }
-
-        switch (message.MsgType)
-        {
-            case MessageType.DNSLookupReply:
-                Logging($"[Incoming] ← MsgId: {message.MsgId}, MsgType: DNSLookupReply, Content: {JsonSerializer.Serialize(message.Content)}");
-                break;
-
-            case MessageType.Error:
-                Logging($"[Incoming] ← MsgId: {message.MsgId}, MsgType: Error, Content: {message.Content}");
-                break;
-
-            case MessageType.End:
-                Logging("[Incoming] ← MsgType: End, Action: Closing connection");
-                break;
-
-            default:
-                throw new MessageTypeMismatchException($"Unexpected message type received: {message.MsgType}");
-        }
-
-        if (message.MsgType != MessageType.End)
-        {
-            SendAck(expectedMsgId);
-        }
-    }
-
-    //TODO: [Send Acknowledgment to Server]
-    private static void SendAck(int originalMsgId)
-    {
-        var ack = new Message
-        {
-            MsgId = originalMsgId + 1000,
-            MsgType = MessageType.Ack,
-            Content = originalMsgId
-        };
-
-        SendMessage(ack);
-        Logging($"[Outgoing] → MsgId: {ack.MsgId}, MsgType: {ack.MsgType}, Content: MsgId: {ack.Content}");
-    }
-
-    // TODO: [Send next DNSLookup to server]
-    private static void ProcessAllDnsLookups()
-    {
-        var lookups = CreateDnsLookupMessages();
-
-        foreach (var msg in lookups)
-        {
-            try
-            {                
-                if (msg.MsgType == MessageType.DNSLookup && msg.Content is DNSRecord)
-                {
-                    SendDnsLookupMessage(msg);
-                    ReceiveAndHandleMessage(msg.MsgId);
-                }
-                else
-                {
-                    Logging($"[Error] ✖ MsgId: {msg.MsgId} → Invalid content type. Message not sent.");
-                }
-            }
-            catch (Exception ex)
-            {
-                HandleError(ex);
-            }
-        }
-    }
-
-
-    // repeat the process until all DNSLoopkups (correct and incorrect onces) are sent to server and the replies with DNSLookupReply
-
-    //TODO: [Receive and print End from server]
-    private static void ReceiveEnd()
-    {
-        var end = ReceiveMessage();
-        if (end.MsgType == MessageType.End)
-        {
-            Logging("[Incoming] ← MsgType: End, Action: Closing client.");
-        }
-        else
-        {
-            Logging($"[Incoming] ← Expected End but got MsgType: {end.MsgType}");
         }
     }
 
@@ -260,6 +156,102 @@ class ClientUDP
 
             };
     }
+
+    // TODO: [Create and send DNSLookup Message]    
+    private static void ProcessAllDnsLookups()
+    {
+        var lookups = CreateDnsLookupMessages();
+
+        foreach (var msg in lookups)
+        {
+            try
+            {
+                if (msg.MsgType == MessageType.DNSLookup && msg.Content is DNSRecord)
+                {                   
+                    SendMessage(msg);
+                    Logging($"[Outgoing] → MsgId: {msg.MsgId}, MsgType: {msg.MsgType}, Content: {JsonSerializer.Serialize(msg.Content)}");
+                                    
+                    ReceiveAndHandleMessage(msg.MsgId);
+                }
+                else
+                {
+                    Logging($"[Error] ✖ MsgId: {msg.MsgId} → Invalid content type. Message not sent.");
+                }
+            }
+            catch (Exception ex)
+            {
+                HandleError(ex);
+            }
+        }
+    }
+
+    //TODO: [Receive and print End from server]
+    private static void ReceiveEnd()
+    {
+        var end = ReceiveMessage();
+        if (end.MsgType == MessageType.End)
+        {
+            Logging("[Incoming] ← MsgType: End, Action: Closing client.");
+        }
+        else
+        {
+            Logging($"[Incoming] ← Expected End but got MsgType: {end.MsgType}");
+        }
+    }
+
+       
+
+    //TODO: [Receive and handle reply with Ack]
+    private static void ReceiveAndHandleMessage(int expectedMsgId)
+    {
+        var message = ReceiveMessage();
+
+        switch (message.MsgType)
+        {
+            case MessageType.DNSLookupReply:
+                Logging($"[Incoming] ← MsgId: {message.MsgId}, MsgType: DNSLookupReply, Content: {JsonSerializer.Serialize(message.Content)}");
+                break;
+
+            case MessageType.Error:
+                Logging($"[Incoming] ← MsgId: {message.MsgId}, MsgType: Error, Content: {message.Content}");
+                break;
+
+            case MessageType.End:
+                Logging("[Incoming] ← MsgType: End, Action: Closing connection");
+                break;
+
+            default:
+                throw new MessageTypeMismatchException($"Unexpected message type received: {message.MsgType}");
+        }
+
+        if (message.MsgType != MessageType.End)
+        {
+            SendAck(expectedMsgId);
+        }
+    }
+
+
+    //TODO: [Send Acknowledgment to Server]
+    private static void SendAck(int originalMsgId)
+    {
+        var ack = new Message
+        {
+            MsgId = originalMsgId + 1000,
+            MsgType = MessageType.Ack,
+            Content = originalMsgId
+        };
+
+        SendMessage(ack);
+        Logging($"[Outgoing] → MsgId: {ack.MsgId}, MsgType: {ack.MsgType}, Content: MsgId: {ack.Content}");
+    }
+
+ 
+
+    // repeat the process until all DNSLoopkups (correct and incorrect onces) are sent to server and the replies with DNSLookupReply
+
+  
+
+   
 
     private static string SerializeMessage(Message message)
     {
