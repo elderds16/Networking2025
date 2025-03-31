@@ -191,11 +191,11 @@ class ClientUDP
         var end = ReceiveMessage();
         if (end.MsgType == MessageType.End)
         {
-            Logging("[Incoming] ← MsgType: End, Action: Closing client.");
+            Logging($"[End] ← MsgType: {end.MsgType}, Action: Closing client.");
         }
         else
         {
-            Logging($"[Incoming] ← Expected End but got MsgType: {end.MsgType}");
+            Logging($"[Error] ← Expected End but got MsgType: {end.MsgType}");
         }
     }       
 

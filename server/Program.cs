@@ -128,7 +128,7 @@ public class ServerUDP
                     MessageService.Logging($"[ACKnowledged] ← MsgId: {_lastMessage.MsgId}, MsgType: {_lastMessage.MsgType}, Content: {JsonSerializer.Serialize(_lastMessage.Content)}");
                     break;
                 case MessageType.End:
-                    MessageService.Logging("[End] Received End from client.");
+                    MessageService.Logging("[Incoming] Received End from client.");
                     receiving = false;
                     break;
                 default:
@@ -209,8 +209,25 @@ public static class MessageService
     public static void sendMessage(Socket serverSocket, byte[] sendMessage, int msgId, MessageType type, string content)
     {
         serverSocket.SendTo(sendMessage, 0, sendMessage.Length, SocketFlags.None, clientEndpoint);
-        Logging($"[Outgoing] → MsgId: {msgId}, MsgType: {type}, Content: {content}");
+
+        string label;
+
+        switch (type)
+        {
+            case MessageType.Error:
+                label = "[Error]";
+                break;
+            case MessageType.End:
+                label = "[End]";
+                break;
+            default:
+                label = "[Outgoing]";
+                break;
+        }
+
+        Logging($"{label} → MsgId: {msgId}, MsgType: {type}, Content: {content}");
     }
+
 
     public static void sendDNSRecord(Socket serverSocket, byte[] sendMessage, int msgId, MessageType type, object content)
     {
