@@ -168,17 +168,24 @@ class ClientUDP
         foreach (var msg in lookups)
         {
             try
-            {
-                SendDnsLookupMessage(msg);
-                ReceiveAndHandleMessage(msg.MsgId);
+            {                
+                if (msg.MsgType == MessageType.DNSLookup && msg.Content is DNSRecord)
+                {
+                    SendDnsLookupMessage(msg);
+                    ReceiveAndHandleMessage(msg.MsgId);
+                }
+                else
+                {
+                    Logging($"[Error] ✖ MsgId: {msg.MsgId} → Invalid content type. Message not sent.");
+                }
             }
             catch (Exception ex)
             {
                 HandleError(ex);
             }
         }
-
     }
+
 
     // repeat the process until all DNSLoopkups (correct and incorrect onces) are sent to server and the replies with DNSLookupReply
 
@@ -223,7 +230,32 @@ class ClientUDP
                     MsgId = 104,
                     MsgType = MessageType.DNSLookup,
                     Content = new DNSRecord { Type = "A", Name = "" }
+                },
+                new Message
+                {
+                    MsgId = 105,
+                    MsgType = MessageType.DNSLookup,
+                    Content = new DNSRecord { Type = "", Name = "www.test.com" }
+                },
+                new Message
+                {
+                    MsgId = 106,
+                    MsgType = MessageType.DNSLookup,
+                    Content = new DNSRecord { Type = "", Name = "" }
+                },
+                new Message
+                {
+                    MsgId = 107,
+                    MsgType = MessageType.DNSLookup,
+                    Content = "invalid-nonobject-content"
+                },
+                new Message
+                {
+                    MsgId = 108,
+                    MsgType = MessageType.DNSLookup,
+                    Content = new DNSRecord { Type = "MX", Name = "exampleZ.com" }
                 }
+
 
             };
     }

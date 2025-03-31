@@ -70,43 +70,59 @@ class ServerUDP
             {
                 try
                 {
-                    DNSRecord DNSrecord = JsonSerializer.Deserialize<DNSRecord>(receivedMessage.Content.ToString());
+                    // Probeer DNSRecord te deserializen
+                    var dnsContent = receivedMessage.Content?.ToString();
+                    DNSRecord? dnsRecord = JsonSerializer.Deserialize<DNSRecord>(dnsContent);
 
-                    if (DNSRecords.Any(record => record.Type == DNSrecord.Type && record.Name == DNSrecord.Name))
+                    // Controleer of DNSRecord geldig is
+                    if (dnsRecord == null)
+                        throw new Exception("Invalid DNSRecord format.");
+
+                    if (string.IsNullOrWhiteSpace(dnsRecord.Type) && string.IsNullOrWhiteSpace(dnsRecord.Name))
+                        throw new Exception("Both fields 'Type' and 'Name'cannot be empty.");
+
+                    if (string.IsNullOrWhiteSpace(dnsRecord.Type))
+                        throw new Exception("Field 'Type' cannot be empty.");
+
+                    if (string.IsNullOrWhiteSpace(dnsRecord.Name))
+                        throw new Exception("Field 'Name' cannot be empty.");
+
+                    // Check of het record bestaat in de lijst
+                    var match = DNSRecords.Find(record => record.Type == dnsRecord.Type && record.Name == dnsRecord.Name);
+
+                    if (match != null)
                     {
-                        DNSRecord existingRecord = DNSRecords.Find(record => record.Type == DNSrecord.Type && record.Name == DNSrecord.Name);
+                        dnsRecord.Value = match.Value;
+                        dnsRecord.TTL = match.TTL;
+                        dnsRecord.Priority = match.Priority;
 
-                        DNSrecord.Value = existingRecord.Value;
-                        DNSrecord.TTL = existingRecord.TTL;
-                        DNSrecord.Priority = existingRecord.Priority;
-
-                        byte[] sendMessage = MessageService.serializeMessage(receivedMessage.MsgId, MessageType.DNSLookupReply, DNSrecord);
-                        MessageService.sendDNSRecord(ServerSocket, sendMessage, receivedMessage.MsgId, MessageType.DNSLookupReply, DNSrecord);
+                        byte[] sendMessage = MessageService.serializeMessage(receivedMessage.MsgId, MessageType.DNSLookupReply, dnsRecord);
+                        MessageService.sendDNSRecord(ServerSocket, sendMessage, receivedMessage.MsgId, MessageType.DNSLookupReply, dnsRecord);
                     }
                     else
                     {
-                        byte[] sendMessage = MessageService.serializeMessage(receivedMessage.MsgId, MessageType.Error, DNSrecord);
-                        MessageService.sendDNSRecord(ServerSocket, sendMessage, receivedMessage.MsgId, MessageType.Error, DNSrecord);
+                        throw new Exception("DNS record not found.");
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    if (DNSRecords.Any(record => record.Name == receivedMessage.Content.ToString()))
-                    {
-                        DNSRecord existingRecord = DNSRecords.Find(record => record.Name == receivedMessage.Content.ToString());
+                    string errorMsg;
 
-                        byte[] sendMessage = MessageService.serializeMessage(receivedMessage.MsgId, MessageType.DNSLookupReply, existingRecord);
-                        MessageService.sendDNSRecord(ServerSocket, sendMessage, receivedMessage.MsgId, MessageType.DNSLookupReply, existingRecord);
+                    if (ex is JsonException)
+                    {
+                        errorMsg = $"Error in message with id {receivedMessage.MsgId}: Invalid DNSLookup format.";
                     }
                     else
                     {
-                        string errorMessage = $"Error in message with id {receivedMessage.MsgId}: Domain not found";
-                        byte[] sendMessage = MessageService.serializeMessage(9999, MessageType.Error, errorMessage);
-                        MessageService.sendMessage(ServerSocket, sendMessage, 9999, MessageType.Error, errorMessage);
-
+                        errorMsg = $"Error in message with id {receivedMessage.MsgId}: {ex.Message}";
                     }
+
+                    byte[] errorMessage = MessageService.serializeMessage(9999, MessageType.Error, errorMsg);
+                    MessageService.sendMessage(ServerSocket, errorMessage, 9999, MessageType.Error, errorMsg);
                 }
+
             }
+
         }
 
         // TODO:[Send Welcome to the client]
