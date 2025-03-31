@@ -47,7 +47,8 @@ class ClientUDP
             SendHello();
             ReceiveWelcome();
             ProcessAllDnsLookups();
-            
+            ReceiveEnd();
+
         }
         catch (Exception e)
         {
@@ -55,7 +56,7 @@ class ClientUDP
         }
         finally
         {
-            ReceiveEnd();
+            
             _udpSocket?.Dispose();
         }
     }
@@ -212,9 +213,9 @@ class ClientUDP
                 Logging($"[Incoming] ← MsgId: {message.MsgId}, MsgType: Error, Content: {message.Content}");
                 break;
 
-            case MessageType.End:
-                Logging("[Incoming] ← MsgType: End, Action: Closing connection");
-                break;
+            //case MessageType.End:
+            //    Logging("[Incoming] ← MsgType: End, Action: Closing connection");
+            //    break;
 
             default:
                 throw new MessageTypeMismatchException($"Unexpected message type received: {message.MsgType}");
