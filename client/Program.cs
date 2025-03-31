@@ -307,13 +307,17 @@ class ClientUDP
 
         try
         {
-            var errorMsg = new Message
+            if (ex is not ServerResponseException)
             {
-                MsgId = 9999,
-                MsgType = MessageType.Error,
-                Content = ex.Message
-            };
-            SendMessage(errorMsg);
+                var errorMsg = new Message
+                {
+                    MsgId = 9999,
+                    MsgType = MessageType.Error,
+                    Content = ex.Message
+                };
+                SendMessage(errorMsg);
+            }
+
         }
         catch
         {

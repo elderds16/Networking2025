@@ -100,9 +100,10 @@ class ServerUDP
                     }
                     else
                     {
-                        string content = "Domain not found";
-                        byte[] sendMessage = MessageService.serializeMessage(receivedMessage.MsgId, MessageType.Error, content);
-                        MessageService.sendMessage(ServerSocket, sendMessage, receivedMessage.MsgId, MessageType.Error, content);
+                        string errorMessage = $"Error in message with id {receivedMessage.MsgId}: Domain not found";
+                        byte[] sendMessage = MessageService.serializeMessage(9999, MessageType.Error, errorMessage);
+                        MessageService.sendMessage(ServerSocket, sendMessage, 9999, MessageType.Error, errorMessage);
+
                     }
                 }
             }
