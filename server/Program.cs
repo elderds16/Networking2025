@@ -29,22 +29,21 @@ public class Setting
 
 public class ServerUDP
 {
-    private static readonly string ConfigFile = "../Setting.json";
-    private static readonly string DnsRecordsFile = "./DNSrecords.json";
 
-    private Setting _setting;
-    private List<DNSRecord> _dnsRecords;
+    static string configFile = @"../Setting.json";
+    static string configContent = File.ReadAllText(configFile);
+    static Setting? setting = JsonSerializer.Deserialize<Setting>(configContent);
+
+    // TODO: [Read the JSON file and return the list of DNSRecords]
+    static string dnsRecordsFile = File.ReadAllText("./DNSrecords.json");
+    static List<DNSRecord> dnsRecords = JsonSerializer.Deserialize<List<DNSRecord>>(dnsRecordsFile);
+
+    static EndPoint clientEndpoint = new IPEndPoint(IPAddress.Parse(setting.ClientIPAddress), setting.ClientPortNumber);
+
     private Socket _serverSocket;
     private byte[] _buffer = new byte[1024];
-    private EndPoint _clientEndpoint;
     private Message receivedMessage;
 
-    public ServerUDP()
-    {
-        _setting = JsonSerializer.Deserialize<Setting>(File.ReadAllText(ConfigFile));
-        _dnsRecords = JsonSerializer.Deserialize<List<DNSRecord>>(File.ReadAllText(DnsRecordsFile));
-        _clientEndpoint = new IPEndPoint(IPAddress.Parse(_setting.ClientIPAddress), _setting.ClientPortNumber);
-    }
 
     public void Start()
     {
@@ -76,13 +75,14 @@ public class ServerUDP
         }
     }
 
+    // TODO: [Create a socket and endpoints and bind it to the server IP address and port number]
     private void InitializeServer()
     {
         try
         {
-            MessageService.clientEndpoint = _clientEndpoint;
+            MessageService.clientEndpoint = clientEndpoint;
             _serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse(_setting.ServerIPAddress), _setting.ServerPortNumber);
+            IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse(setting.ServerIPAddress), setting.ServerPortNumber);
             _serverSocket.Bind(serverEndPoint);
             Console.WriteLine("");
             MessageService.Logging("[Initializing] Server started");
@@ -93,7 +93,8 @@ public class ServerUDP
         }
     }
 
-
+    // TODO:[Receive and print a received Message from the client]
+    // TODO:[Receive and print Hello]
     private void ReceiveHello()
     {
         receivedMessage = MessageService.receiveMessage(_serverSocket, _buffer);
@@ -108,7 +109,7 @@ public class ServerUDP
         }
     }
 
-
+    // TODO:[Send Welcome to the client]
     private void SendWelcome()
     {
         if (receivedMessage.MsgType != MessageType.Hello)
@@ -121,8 +122,8 @@ public class ServerUDP
         MessageService.sendMessage(_serverSocket, sendMessage, receivedMessage.MsgId, MessageType.Welcome, content);
     }
 
-
-    private void HandleLookUps()
+    // TODO:[Receive and print DNSLookup]
+        private void HandleLookUps()
     {
         bool receiving = true;
 
@@ -137,6 +138,7 @@ public class ServerUDP
                     HandleSingleLookup();
                     break;
 
+                // TODO:[Receive Ack about correct DNSLookupReply from the client]
                 case MessageType.Ack:
                     MessageService.Logging($"[ACKnowledged] ← MsgId: {receivedMessage.MsgId}, MsgType: {receivedMessage.MsgType}, Content: {JsonSerializer.Serialize(receivedMessage.Content)}");
                     break;
@@ -154,6 +156,8 @@ public class ServerUDP
 
     }
 
+    // TODO:[Query the DNSRecord in Json file]
+    // TODO:[If found Send DNSLookupReply containing the DNSRecord]
     private void HandleSingleLookup()
     {
         try
@@ -163,7 +167,7 @@ public class ServerUDP
             if (dnsRecord == null || string.IsNullOrWhiteSpace(dnsRecord.Type) || string.IsNullOrWhiteSpace(dnsRecord.Name))
                 throw new Exception("Invalid or incomplete DNS record request.");
 
-            var match = _dnsRecords.Find(record => record.Type == dnsRecord.Type && record.Name == dnsRecord.Name);
+            var match = dnsRecords.Find(record => record.Type == dnsRecord.Type && record.Name == dnsRecord.Name);
 
             if (match != null)
             {
@@ -176,6 +180,7 @@ public class ServerUDP
             }
             else
             {
+                // TODO:[If not found Send Error]
                 throw new Exception("DNS record not found.");
             }
         }
@@ -190,6 +195,7 @@ public class ServerUDP
         }
     }
 
+    // TODO:[If no further requests receieved send End to the client]
     private void SendEnd()
     {
         try
@@ -205,7 +211,6 @@ public class ServerUDP
         }
         
     }
-
 
     private void HandleError(Exception ex)
     {
