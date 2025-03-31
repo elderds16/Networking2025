@@ -69,9 +69,9 @@ class ClientUDP
         _serverEndPoint = new IPEndPoint(IPAddress.Parse(setting!.ServerIPAddress!), setting.ServerPortNumber);
         IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Parse(setting.ClientIPAddress!), setting.ClientPortNumber);
         _udpSocket.Bind(clientEndPoint);
-
-        Logging("[Initializing] Socket initialized and bound to client endpoint.");
         Console.WriteLine("");
+        Logging("[Initializing] Socket initialized and bound to client endpoint.");
+        
     }
 
     //TODO: [Create and send Hello]
@@ -192,6 +192,7 @@ class ClientUDP
         if (end.MsgType == MessageType.End)
         {
             Logging($"[End] ← MsgType: {end.MsgType}, Action: Closing client.");
+            Console.WriteLine("");
         }
         else
         {

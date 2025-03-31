@@ -31,7 +31,7 @@ public class ServerUDP
     private Socket _serverSocket;
     private byte[] _buffer = new byte[1024];
     private EndPoint _clientEndpoint;
-    private Message _lastMessage;
+    private Message receivedMessage;
 
     public ServerUDP()
     {
@@ -91,23 +91,23 @@ public class ServerUDP
 
     private void ResetState()
     {
-        _lastMessage = null;
+        receivedMessage = null;
     }
 
     private void ReceiveHello()
     {
-        _lastMessage = MessageService.receiveMessage(_serverSocket, _buffer);
-        if (_lastMessage.MsgType != MessageType.Hello)
+        receivedMessage = MessageService.receiveMessage(_serverSocket, _buffer);
+        if (receivedMessage.MsgType != MessageType.Hello)
             throw new InvalidOperationException("Expected Hello message but received something else.");
 
-        MessageService.Logging($"[Incoming] ← MsgId: {_lastMessage.MsgId}, MsgType: Hello, Content: {_lastMessage.Content}");
+        MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: Hello, Content: {receivedMessage.Content}");
     }
 
     private void SendWelcome()
     {
         string content = "Welcome from server";
-        byte[] sendMessage = MessageService.serializeMessage(_lastMessage.MsgId, MessageType.Welcome, content);
-        MessageService.sendMessage(_serverSocket, sendMessage, _lastMessage.MsgId, MessageType.Welcome, content);
+        byte[] sendMessage = MessageService.serializeMessage(receivedMessage.MsgId, MessageType.Welcome, content);
+        MessageService.sendMessage(_serverSocket, sendMessage, receivedMessage.MsgId, MessageType.Welcome, content);
     }
 
     private void HandleLookUps()
@@ -116,23 +116,23 @@ public class ServerUDP
 
         while (receiving)
         {
-            _lastMessage = MessageService.receiveMessage(_serverSocket, _buffer);
-            MessageService.Logging($"[Incoming] ← MsgId: {_lastMessage.MsgId}, MsgType: {_lastMessage.MsgType}, Content: {JsonSerializer.Serialize(_lastMessage.Content)}");
+            receivedMessage = MessageService.receiveMessage(_serverSocket, _buffer);
+            MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: {receivedMessage.MsgType}, Content: {JsonSerializer.Serialize(receivedMessage.Content)}");
 
-            switch (_lastMessage.MsgType)
+            switch (receivedMessage.MsgType)
             {
                 case MessageType.DNSLookup:
                     HandleSingleLookup();
                     break;
                 case MessageType.Ack:
-                    MessageService.Logging($"[ACKnowledged] ← MsgId: {_lastMessage.MsgId}, MsgType: {_lastMessage.MsgType}, Content: {JsonSerializer.Serialize(_lastMessage.Content)}");
+                    MessageService.Logging($"[ACKnowledged] ← MsgId: {receivedMessage.MsgId}, MsgType: {receivedMessage.MsgType}, Content: {JsonSerializer.Serialize(receivedMessage.Content)}");
                     break;
                 case MessageType.End:
-                    MessageService.Logging("[Incoming] Received End from client.");
+                    MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: {receivedMessage.MsgType}, Content: {JsonSerializer.Serialize(receivedMessage.Content)}");
                     receiving = false;
                     break;
                 default:
-                    MessageService.Logging($"[Error] Unexpected message type: {_lastMessage.MsgType}");
+                    MessageService.Logging($"[Error] Unexpected message type: {receivedMessage.MsgType}");
                     break;
             }
         }
@@ -142,7 +142,7 @@ public class ServerUDP
     {
         try
         {
-            DNSRecord? dnsRecord = JsonSerializer.Deserialize<DNSRecord>(_lastMessage.Content?.ToString());
+            DNSRecord? dnsRecord = JsonSerializer.Deserialize<DNSRecord>(receivedMessage.Content?.ToString());
 
             if (dnsRecord == null || string.IsNullOrWhiteSpace(dnsRecord.Type) || string.IsNullOrWhiteSpace(dnsRecord.Name))
                 throw new Exception("Invalid or incomplete DNS record request.");
@@ -155,8 +155,8 @@ public class ServerUDP
                 dnsRecord.TTL = match.TTL;
                 dnsRecord.Priority = match.Priority;
 
-                byte[] response = MessageService.serializeMessage(_lastMessage.MsgId, MessageType.DNSLookupReply, dnsRecord);
-                MessageService.sendDNSRecord(_serverSocket, response, _lastMessage.MsgId, MessageType.DNSLookupReply, dnsRecord);
+                byte[] response = MessageService.serializeMessage(receivedMessage.MsgId, MessageType.DNSLookupReply, dnsRecord);
+                MessageService.sendDNSRecord(_serverSocket, response, receivedMessage.MsgId, MessageType.DNSLookupReply, dnsRecord);
             }
             else
             {
@@ -166,8 +166,8 @@ public class ServerUDP
         catch (Exception ex)
         {
             string errorMsg = ex is JsonException
-                ? $"Error in message with id {_lastMessage.MsgId}: Invalid DNSLookup format."
-                : $"Error in message with id {_lastMessage.MsgId}: {ex.Message}";
+                ? $"Error in message with id {receivedMessage.MsgId}: Invalid DNSLookup format."
+                : $"Error in message with id {receivedMessage.MsgId}: {ex.Message}";
 
             byte[] errorMessage = MessageService.serializeMessage(9999, MessageType.Error, errorMsg);
             MessageService.sendMessage(_serverSocket, errorMessage, 9999, MessageType.Error, errorMsg);
@@ -176,7 +176,6 @@ public class ServerUDP
 
     private void SendEnd()
     {
-       
         string content = "End Message. Client Closing";
         byte[] sendMessage = MessageService.serializeMessage(8888, MessageType.End, content);
         MessageService.sendMessage(_serverSocket, sendMessage, 8888, MessageType.End, content);
@@ -227,7 +226,6 @@ public static class MessageService
 
         Logging($"{label} → MsgId: {msgId}, MsgType: {type}, Content: {content}");
     }
-
 
     public static void sendDNSRecord(Socket serverSocket, byte[] sendMessage, int msgId, MessageType type, object content)
     {
