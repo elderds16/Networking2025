@@ -68,6 +68,7 @@ class ClientUDP
         _udpSocket.Bind(clientEndPoint);
 
         Logging("[Initializing] Socket initialized and bound to client endpoint.");
+        Console.WriteLine("");
     }
 
     //TODO: [Create and send HELLO]
