@@ -72,7 +72,7 @@ class ClientUDP
         Console.WriteLine("");
     }
 
-    //TODO: [Create and send HELLO]
+    //TODO: [Create and send Hello]
     private static void SendHello()
     {
         var message = new Message
@@ -152,8 +152,6 @@ class ClientUDP
                     MsgType = MessageType.DNSLookup,
                     Content = new DNSRecord { Type = "MX", Name = "exampleZ.com" }
                 }
-
-
             };
     }
 
@@ -197,9 +195,7 @@ class ClientUDP
         {
             Logging($"[Incoming] ← Expected End but got MsgType: {end.MsgType}");
         }
-    }
-
-       
+    }       
 
     //TODO: [Receive and handle reply with Ack]
     private static void ReceiveAndHandleMessage(int expectedMsgId)
@@ -230,7 +226,6 @@ class ClientUDP
         }
     }
 
-
     //TODO: [Send Acknowledgment to Server]
     private static void SendAck(int originalMsgId)
     {
@@ -244,14 +239,7 @@ class ClientUDP
         SendMessage(ack);
         Logging($"[Outgoing] → MsgId: {ack.MsgId}, MsgType: {ack.MsgType}, Content: MsgId: {ack.Content}");
     }
-
- 
-
-    // repeat the process until all DNSLoopkups (correct and incorrect onces) are sent to server and the replies with DNSLookupReply
-
-  
-
-   
+      
 
     private static string SerializeMessage(Message message)
     {
