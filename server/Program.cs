@@ -46,7 +46,7 @@ class ServerUDP
         byte[] buffer = new byte[1024];
         MessageService.clientEndpoint = clientEndpoint;
 
-        Console.WriteLine("[Initalizing] Server starting...");
+        MessageService.Logging("[Initalizing] Server starting...");
         Console.WriteLine("");
 
         // TODO: [Create a socket and endpoints and bind it to the server IP address and port number]
@@ -58,7 +58,16 @@ class ServerUDP
         {
             // TODO:[Receive and print a received Message from the client] && [Receive and print Hello]
             Message receivedMessage = MessageService.receiveMessage(ServerSocket, buffer);
-            MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: {receivedMessage.MsgType}, Content: {JsonSerializer.Serialize(receivedMessage.Content)}");
+
+            if (receivedMessage.MsgType == MessageType.Ack)
+            {
+                MessageService.Logging($"[ACKnowledged] ← MsgId: {receivedMessage.MsgId}, MsgType: {receivedMessage.MsgType}, Content: {JsonSerializer.Serialize(receivedMessage.Content)}");
+            }
+            else
+            {
+                MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: {receivedMessage.MsgType}, Content: {JsonSerializer.Serialize(receivedMessage.Content)}");
+            }
+
             if (receivedMessage.MsgType == MessageType.Hello)
             {
                 string content = "Welcome from server";
