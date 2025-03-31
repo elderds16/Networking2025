@@ -48,13 +48,43 @@ public class ServerUDP
             while (true)
             {
                 ResetState();
+
                 try
                 {
                     ReceiveMessage();
                     AcknowledgeMessage();
                     HandleHello();
-                    HandleLookUps();
-                    SendEnd();
+
+                    bool receiving = true;
+
+                    while (receiving)
+                    {
+                        _lastMessage = MessageService.receiveMessage(_serverSocket, _buffer);
+                        AcknowledgeMessage();
+
+                        switch (_lastMessage.MsgType)
+                        {
+                            case MessageType.DNSLookup:
+                                HandleLookUps();
+                                break;
+
+                            case MessageType.Ack:
+                                MessageService.Logging($"[ACKnowledged] ← MsgId: {_lastMessage.MsgId}, MsgType: {_lastMessage.MsgType}, Content: {JsonSerializer.Serialize(_lastMessage.Content)}");
+                                break;
+
+                            case MessageType.End:
+                                MessageService.Logging($"[End] Received End from client.");
+                                receiving = false;
+                                break;
+
+                            default:
+                                MessageService.Logging($"[Error] Unexpected message type received: {_lastMessage.MsgType}");
+                                receiving = false;
+                                break;
+                        }
+                    }
+
+                    SendEnd(); // PAS NA while-loop
                 }
                 catch (Exception ex)
                 {
@@ -68,9 +98,10 @@ public class ServerUDP
         }
         finally
         {
-            _serverSocket?.Dispose();
+            _serverSocket.Dispose();
         }
     }
+
 
     private void InitializeServer()
     {
@@ -112,17 +143,22 @@ public class ServerUDP
 
     private void HandleHello()
     {
-        if (_lastMessage.MsgType != MessageType.Hello)
-            throw new InvalidOperationException("Expected Hello message but received something else.");
+        if (_lastMessage.MsgType == MessageType.Hello) {
 
+
+
+        Console.WriteLine("");
         string content = "Welcome from server";
         byte[] sendMessage = MessageService.serializeMessage(_lastMessage.MsgId, MessageType.Welcome, content);
         MessageService.sendMessage(_serverSocket, sendMessage, _lastMessage.MsgId, MessageType.Welcome, content);
+        }
+        else { throw new InvalidOperationException("Expected Hello message but received something else."); 
+        }
     }
 
     private void HandleLookUps()
     {
-        _lastMessage = MessageService.receiveMessage(_serverSocket, _buffer);
+       
 
         if (_lastMessage.MsgType != MessageType.DNSLookup)
             return;
