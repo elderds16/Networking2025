@@ -46,9 +46,7 @@ public class ServerUDP
         {
             InitializeServer();
             while (true)
-            {
-                ResetState();
-
+            {                
                 try
                 {
                     ReceiveHello();
@@ -89,19 +87,21 @@ public class ServerUDP
         }
     }
 
-    private void ResetState()
-    {
-        receivedMessage = null;
-    }
 
     private void ReceiveHello()
     {
         receivedMessage = MessageService.receiveMessage(_serverSocket, _buffer);
-        if (receivedMessage.MsgType != MessageType.Hello)
-            throw new InvalidOperationException("Expected Hello message but received something else.");
 
-        MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: Hello, Content: {receivedMessage.Content}");
+        if (receivedMessage.MsgType == MessageType.Hello)
+        {
+            MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: Hello, Content: {receivedMessage.Content}");
+        }
+        else
+        {
+            throw new InvalidOperationException($"[Error] Expected Hello message but received {receivedMessage.MsgType} instead.");
+        }
     }
+
 
     private void SendWelcome()
     {
@@ -117,25 +117,29 @@ public class ServerUDP
         while (receiving)
         {
             receivedMessage = MessageService.receiveMessage(_serverSocket, _buffer);
-            MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: {receivedMessage.MsgType}, Content: {JsonSerializer.Serialize(receivedMessage.Content)}");
 
             switch (receivedMessage.MsgType)
             {
                 case MessageType.DNSLookup:
+                    MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: DNSLookup, Content: {JsonSerializer.Serialize(receivedMessage.Content)}");
                     HandleSingleLookup();
                     break;
+
                 case MessageType.Ack:
                     MessageService.Logging($"[ACKnowledged] ← MsgId: {receivedMessage.MsgId}, MsgType: {receivedMessage.MsgType}, Content: {JsonSerializer.Serialize(receivedMessage.Content)}");
                     break;
+
                 case MessageType.End:
                     MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: {receivedMessage.MsgType}, Content: {JsonSerializer.Serialize(receivedMessage.Content)}");
                     receiving = false;
                     break;
+
                 default:
                     MessageService.Logging($"[Error] Unexpected message type: {receivedMessage.MsgType}");
                     break;
             }
         }
+
     }
 
     private void HandleSingleLookup()
@@ -176,7 +180,7 @@ public class ServerUDP
 
     private void SendEnd()
     {
-        string content = "End Message. Client Closing";
+        string content = "End Message. Client Closing. Server is still up and running.";
         byte[] sendMessage = MessageService.serializeMessage(8888, MessageType.End, content);
         MessageService.sendMessage(_serverSocket, sendMessage, 8888, MessageType.End, content);
         Console.WriteLine("");
