@@ -1,10 +1,15 @@
 ﻿using System;
+using System.Data;
+using System.Data.SqlTypes;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using LibData;
 
+// ReceiveFrom();
 class Program
 {
     static void Main(string[] args)
@@ -12,7 +17,8 @@ class Program
         new ServerUDP().Start();
     }
 }
-
+// StudentNumbers: 0864154, 0907615
+// StudentNames: Elder dos Santos, Yasin Mesdar
 public class Setting
 {
     public int ServerPortNumber { get; set; }
@@ -203,15 +209,27 @@ public class ServerUDP
 
     private void HandleError(Exception ex)
     {
-        try
+        if (ex is ClientErrorMessageException clientError)
         {
-            MessageService.Logging($"[Error] {ex.Message}");
+            MessageService.Logging($"[Error] Client Error → {clientError.Message}");
         }
-        catch
+        else
         {
-            MessageService.Logging("Failed to handle error properly.");
+            try
+            {
+                MessageService.Logging($"[Error] {ex.GetType().Name} → {ex.Message}");
+
+                string errorMsg = $"[Error] {ex.Message}";
+                byte[] errorMessage = MessageService.serializeMessage(9999, MessageType.Error, errorMsg);
+                MessageService.sendMessage(_serverSocket, errorMessage, 9999, MessageType.Error, errorMsg);
+            }
+            catch
+            {
+                MessageService.Logging("[Error] → Failed to send error message to client.");
+            }
         }
     }
+
 }
 
 public static class MessageService
@@ -245,7 +263,7 @@ public static class MessageService
 
         Logging($"{label} → MsgId: {msgId}, MsgType: {type}, Content: {content}");
     }
-
+    
     public static void sendDNSRecord(Socket serverSocket, byte[] sendMessage, int msgId, MessageType type, object content)
     {
         serverSocket.SendTo(sendMessage, 0, sendMessage.Length, SocketFlags.None, clientEndpoint);
@@ -254,13 +272,41 @@ public static class MessageService
 
     public static Message receiveMessage(Socket serverSocket, byte[] buffer)
     {
-        int receivedBytes = serverSocket.ReceiveFrom(buffer, ref clientEndpoint);
-        string data = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
-        return JsonSerializer.Deserialize<Message>(data);
+        try
+        {
+            int receivedBytes = serverSocket.ReceiveFrom(buffer, ref clientEndpoint);
+            string data = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
+
+            Message? message = JsonSerializer.Deserialize<Message>(data);
+
+            if (message == null)
+            {
+                throw new Exception("Deserialization returned null. Invalid message format.");
+            }
+
+            return message;
+        }
+        catch (SocketException ex)
+        {
+            throw new Exception("Socket error while receiving message: " + ex.Message);
+        }
+        catch (JsonException ex)
+        {
+            throw new Exception("Invalid JSON format received: " + ex.Message);
+        }
     }
+
 
     public static void Logging(string message)
     {
         Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}");
+    }
+
+}
+
+public class ClientErrorMessageException : Exception
+{
+    public ClientErrorMessageException(string message) : base(message)
+    {
     }
 }
