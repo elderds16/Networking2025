@@ -105,10 +105,16 @@ public class ServerUDP
 
     private void SendWelcome()
     {
+        if (receivedMessage.MsgType != MessageType.Hello)
+        {
+            throw new InvalidOperationException($"[Error] Cannot send Welcome. Last message was not Hello, but {receivedMessage.MsgType}.");
+        }
+
         string content = "Welcome from server";
         byte[] sendMessage = MessageService.serializeMessage(receivedMessage.MsgId, MessageType.Welcome, content);
         MessageService.sendMessage(_serverSocket, sendMessage, receivedMessage.MsgId, MessageType.Welcome, content);
     }
+
 
     private void HandleLookUps()
     {
@@ -180,11 +186,20 @@ public class ServerUDP
 
     private void SendEnd()
     {
-        string content = "End Message. Client Closing. Server is still up and running.";
-        byte[] sendMessage = MessageService.serializeMessage(8888, MessageType.End, content);
-        MessageService.sendMessage(_serverSocket, sendMessage, 8888, MessageType.End, content);
-        Console.WriteLine("");
+        try
+        {
+            string content = "End Message. Client Closing. Server is still up and running!";
+            byte[] sendMessage = MessageService.serializeMessage(8888, MessageType.End, content);
+            MessageService.sendMessage(_serverSocket, sendMessage, 8888, MessageType.End, content);
+            Console.WriteLine("");
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("[Error] Failed to send End message to client.", ex);
+        }
+        
     }
+
 
     private void HandleError(Exception ex)
     {
