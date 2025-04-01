@@ -169,7 +169,6 @@ public class ServerUDP
         }
     }
 
-
     // TODO:[Query the DNSRecord in Json file]
     // TODO:[If found Send DNSLookupReply containing the DNSRecord]
     private void HandleSingleLookup()
