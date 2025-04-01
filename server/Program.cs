@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+
 using LibData;
 
 // ReceiveFrom();
@@ -44,6 +45,8 @@ public class ServerUDP
     private byte[] _buffer = new byte[1024];
     private Message receivedMessage;
 
+    private bool helloReceived = false;
+    private bool welcomeSent = false;
 
     public void Start()
     {
@@ -54,6 +57,9 @@ public class ServerUDP
             {                
                 try
                 {
+                    helloReceived = false;
+                    welcomeSent = false;
+
                     ReceiveHello();
                     SendWelcome();
                     HandleLookUps();
@@ -102,6 +108,8 @@ public class ServerUDP
         if (receivedMessage.MsgType == MessageType.Hello)
         {
             MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: Hello, Content: {receivedMessage.Content}");
+            helloReceived = true;
+
         }
         else
         {
@@ -120,11 +128,18 @@ public class ServerUDP
         string content = "Welcome from server";
         byte[] sendMessage = MessageService.serializeMessage(receivedMessage.MsgId, MessageType.Welcome, content);
         MessageService.sendMessage(_serverSocket, sendMessage, receivedMessage.MsgId, MessageType.Welcome, content);
+        welcomeSent = true;
+
     }
 
     // TODO:[Receive and print DNSLookup]
-        private void HandleLookUps()
-    {
+    private void HandleLookUps()
+    {     
+        if (!helloReceived || !welcomeSent)
+        {
+            throw new InvalidOperationException("[Protocol Error] Received DNS-related messages before handshake completed.");
+        }
+
         bool receiving = true;
 
         while (receiving)
@@ -138,7 +153,6 @@ public class ServerUDP
                     HandleSingleLookup();
                     break;
 
-                // TODO:[Receive Ack about correct DNSLookupReply from the client]
                 case MessageType.Ack:
                     MessageService.Logging($"[ACKnowledged] ← MsgId: {receivedMessage.MsgId}, MsgType: {receivedMessage.MsgType}, Content: {JsonSerializer.Serialize(receivedMessage.Content)}");
                     break;
@@ -153,8 +167,8 @@ public class ServerUDP
                     break;
             }
         }
-
     }
+
 
     // TODO:[Query the DNSRecord in Json file]
     // TODO:[If found Send DNSLookupReply containing the DNSRecord]
@@ -304,7 +318,14 @@ public static class MessageService
 
     public static void Logging(string message)
     {
-        Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}");
+        if (!string.IsNullOrEmpty(message))
+        {
+            Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}");
+        }
+        else
+        {
+            Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Message is empty!");
+        }
     }
 
 }

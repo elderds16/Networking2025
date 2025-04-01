@@ -166,11 +166,12 @@ class ClientUDP
         {
             try
             {
-                if (msg.MsgType == MessageType.DNSLookup && msg.Content is DNSRecord)
+                if (msg.MsgType == MessageType.DNSLookup && msg.Content is DNSRecord dns)
                 {                   
                     SendMessage(msg);
-                    Logging($"[Outgoing] → MsgId: {msg.MsgId}, MsgType: {msg.MsgType}, Content: {JsonSerializer.Serialize(msg.Content)}");
-                                    
+                    var slimLog = new { dns.Type, dns.Name };
+                    Logging($"[Outgoing] → MsgId: {msg.MsgId}, MsgType: {msg.MsgType}, Content: {JsonSerializer.Serialize(slimLog)}");
+
                     ReceiveAndHandleMessage(msg.MsgId);
                 }
                 else
@@ -301,6 +302,7 @@ class ClientUDP
     private static Message DeserializeMessage(string data)
     {
         var message = JsonSerializer.Deserialize<Message>(data);
+
         if (message == null)
         {
             throw new JsonException("Deserialization failed. Received an invalid message format.");
