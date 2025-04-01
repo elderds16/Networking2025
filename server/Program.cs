@@ -15,7 +15,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        new ServerUDP().Start();
+        ServerUDP.Start();
     }
 }
 // StudentNumbers: 0864154, 0907615
@@ -30,7 +30,6 @@ public class Setting
 
 public class ServerUDP
 {
-
     static string configFile = @"../Setting.json";
     static string configContent = File.ReadAllText(configFile);
     static Setting? setting = JsonSerializer.Deserialize<Setting>(configContent);
@@ -41,20 +40,20 @@ public class ServerUDP
 
     static EndPoint clientEndpoint = new IPEndPoint(IPAddress.Parse(setting.ClientIPAddress), setting.ClientPortNumber);
 
-    private Socket _serverSocket;
-    private byte[] _buffer = new byte[1024];
-    private Message receivedMessage;
+    private static Socket _serverSocket;
+    private static byte[] _buffer = new byte[1024];
+    private static Message receivedMessage;
 
-    private bool helloReceived = false;
-    private bool welcomeSent = false;
+    private static bool helloReceived = false;
+    private static bool welcomeSent = false;
 
-    public void Start()
+    public static void Start()
     {
         try
         {
             InitializeServer();
             while (true)
-            {                
+            {
                 try
                 {
                     helloReceived = false;
@@ -82,7 +81,7 @@ public class ServerUDP
     }
 
     // TODO: [Create a socket and endpoints and bind it to the server IP address and port number]
-    private void InitializeServer()
+    private static void InitializeServer()
     {
         try
         {
@@ -101,7 +100,7 @@ public class ServerUDP
 
     // TODO:[Receive and print a received Message from the client]
     // TODO:[Receive and print Hello]
-    private void ReceiveHello()
+    private static void ReceiveHello()
     {
         receivedMessage = MessageService.receiveMessage(_serverSocket, _buffer);
 
@@ -118,7 +117,7 @@ public class ServerUDP
     }
 
     // TODO:[Send Welcome to the client]
-    private void SendWelcome()
+    private static void SendWelcome()
     {
         if (receivedMessage.MsgType != MessageType.Hello)
         {
@@ -133,8 +132,8 @@ public class ServerUDP
     }
 
     // TODO:[Receive and print DNSLookup]
-    private void HandleLookUps()
-    {     
+    private static void HandleLookUps()
+    {
         if (!helloReceived || !welcomeSent)
         {
             throw new InvalidOperationException("[Protocol Error] Received DNS-related messages before handshake completed.");
@@ -149,7 +148,8 @@ public class ServerUDP
             switch (receivedMessage.MsgType)
             {
                 case MessageType.DNSLookup:
-                    MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: DNSLookup, Content: {JsonSerializer.Serialize(receivedMessage.Content)}");
+                    var slimContent = JsonSerializer.Serialize(receivedMessage.Content);
+                    MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: DNSLookup, Content: {slimContent}");
                     HandleSingleLookup();
                     break;
 
@@ -171,7 +171,7 @@ public class ServerUDP
 
     // TODO:[Query the DNSRecord in Json file]
     // TODO:[If found Send DNSLookupReply containing the DNSRecord]
-    private void HandleSingleLookup()
+    private static void HandleSingleLookup()
     {
         try
         {
@@ -209,7 +209,7 @@ public class ServerUDP
     }
 
     // TODO:[If no further requests receieved send End to the client]
-    private void SendEnd()
+    private static void SendEnd()
     {
         try
         {
@@ -222,10 +222,10 @@ public class ServerUDP
         {
             throw new InvalidOperationException("[Error] Failed to send End message to client.", ex);
         }
-        
+
     }
 
-    private void HandleError(Exception ex)
+    private static void HandleError(Exception ex)
     {
         if (ex is ClientErrorMessageException clientError)
         {
@@ -247,7 +247,6 @@ public class ServerUDP
             }
         }
     }
-
 }
 
 public static class MessageService
@@ -281,7 +280,7 @@ public static class MessageService
 
         Logging($"{label} → MsgId: {msgId}, MsgType: {type}, Content: {content}");
     }
-    
+
     public static void sendDNSRecord(Socket serverSocket, byte[] sendMessage, int msgId, MessageType type, object content)
     {
         serverSocket.SendTo(sendMessage, 0, sendMessage.Length, SocketFlags.None, clientEndpoint);
@@ -314,7 +313,6 @@ public static class MessageService
         }
     }
 
-
     public static void Logging(string message)
     {
         if (!string.IsNullOrEmpty(message))
@@ -326,7 +324,6 @@ public static class MessageService
             Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Message is empty!");
         }
     }
-
 }
 
 public class ClientErrorMessageException : Exception
