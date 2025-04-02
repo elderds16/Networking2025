@@ -51,7 +51,7 @@ public class ServerUDP
     private static HashSet<int> sentReplyIds = new();
     private static HashSet<int> ackedReplyIds = new();
     private static DateTime lastActivityTime;
-    private static TimeSpan timeout = TimeSpan.FromMilliseconds(3000);
+    private static TimeSpan timeout = TimeSpan.FromMilliseconds(200);
 
 
 
@@ -98,7 +98,7 @@ public class ServerUDP
             IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse(setting.ServerIPAddress), setting.ServerPortNumber);
             _serverSocket.Bind(serverEndPoint);
             Console.WriteLine("");
-            MessageService.Logging("[Initializing] Server started");
+            MessageService.Logging("[Initializing] Server started!");
         }
         catch (SocketException ex)
         {
@@ -165,7 +165,7 @@ public class ServerUDP
                         case MessageType.Ack:
                             int ackedId = JsonSerializer.Deserialize<int>(receivedMessage.Content.ToString());
                             ackedReplyIds.Add(ackedId);
-                            MessageService.Logging($"[ACKnowledge] ← Ack for MsgId: {ackedId}");
+                            MessageService.Logging($"[ACKnowledged] ← Ack for MsgId: {ackedId}");
                             break;
 
                         default:
