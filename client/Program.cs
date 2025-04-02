@@ -46,8 +46,7 @@ class ClientUDP
             Initialize();
             SendHello();
             ReceiveWelcome();
-            ProcessAllDnsLookups();
-            SendEnd();
+            ProcessAllDnsLookups();         
             ReceiveEnd();
 
         }
@@ -214,12 +213,8 @@ class ClientUDP
 
             case MessageType.Error:
                 Logging($"[Incoming] ← MsgId: {message.MsgId}, MsgType: Error, Content: {message.Content}");
-                break;
-
-            //case MessageType.End:
-            //    Logging("[Incoming] ← MsgType: End, Action: Closing connection");
-            //    break;
-
+                break;               
+           
             default:
                 throw new MessageTypeMismatchException($"Unexpected message type received: {message.MsgType}");
         }
@@ -244,19 +239,6 @@ class ClientUDP
         Logging($"[Outgoing] → MsgId: {ack.MsgId}, MsgType: {ack.MsgType}, Content: MsgId: {ack.Content}");
     }
       
-
-    private static void SendEnd()
-    {
-        var message = new Message
-        {
-            MsgId = 8888,
-            MsgType = MessageType.End,
-            Content = "No messages more to send"
-        };
-        SendMessage(message);
-        Logging($"[Outgoing] → MsgId: {message.MsgId}, MsgType: {message.MsgType}, Content: {message.Content}");
-    }
-
     private static string SerializeMessage(Message message)
     {
         return JsonSerializer.Serialize(message);

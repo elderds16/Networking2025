@@ -20,6 +20,7 @@ class Program
 }
 // StudentNumbers: 0864154, 0907615
 // StudentNames: Elder dos Santos, Yasin Mesdar
+
 public class Setting
 {
     public int ServerPortNumber { get; set; }
@@ -46,6 +47,13 @@ public class ServerUDP
 
     private static bool helloReceived = false;
     private static bool welcomeSent = false;
+
+    private static HashSet<int> sentReplyIds = new();
+    private static HashSet<int> ackedReplyIds = new();
+    private static DateTime lastActivityTime;
+    private static TimeSpan timeout = TimeSpan.FromMilliseconds(3000);
+
+
 
     public static void Start()
     {
@@ -135,36 +143,46 @@ public class ServerUDP
     private static void HandleLookUps()
     {
         if (!helloReceived || !welcomeSent)
-        {
             throw new InvalidOperationException("[Protocol Error] Received DNS-related messages before handshake completed.");
-        }
 
-        bool receiving = true;
+        lastActivityTime = DateTime.UtcNow;
 
-        while (receiving)
+        while (true)
         {
-            receivedMessage = MessageService.receiveMessage(_serverSocket, _buffer);
-
-            switch (receivedMessage.MsgType)
+            if (_serverSocket.Poll(100_000, SelectMode.SelectRead))
             {
-                case MessageType.DNSLookup:
-                    var slimContent = JsonSerializer.Serialize(receivedMessage.Content);
-                    MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: DNSLookup, Content: {slimContent}");
-                    HandleSingleLookup();
-                    break;
+                try
+                {
+                    receivedMessage = MessageService.receiveMessage(_serverSocket, _buffer);
+                    lastActivityTime = DateTime.UtcNow;
 
-                case MessageType.Ack:
-                    MessageService.Logging($"[ACKnowledged] ← MsgId: {receivedMessage.MsgId}, MsgType: {receivedMessage.MsgType}, Content: {JsonSerializer.Serialize(receivedMessage.Content)}");
-                    break;
+                    switch (receivedMessage.MsgType)
+                    {
+                        case MessageType.DNSLookup:
+                            var slimContent = JsonSerializer.Serialize(receivedMessage.Content);
+                            MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: DNSLookup, Content: {slimContent}");
+                            HandleSingleLookup();
+                            break;
 
-                case MessageType.End:
-                    MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: {receivedMessage.MsgType}, Content: {JsonSerializer.Serialize(receivedMessage.Content)}");
-                    receiving = false;
-                    break;
+                        case MessageType.Ack:
+                            int ackedId = JsonSerializer.Deserialize<int>(receivedMessage.Content.ToString());
+                            ackedReplyIds.Add(ackedId);
+                            MessageService.Logging($"[ACKnowledge] ← Ack for MsgId: {ackedId}");
+                            break;
 
-                default:
-                    MessageService.Logging($"[Error] Unexpected message type: {receivedMessage.MsgType}");
-                    break;
+                        default:
+                            MessageService.Logging($"[Error] Unexpected message type: {receivedMessage.MsgType}");
+                            break;
+                    }
+                }                
+                catch (Exception ex)
+                {
+                    HandleError(ex); // log het, maar blijf luisteren
+                }
+            }
+            else if (DateTime.UtcNow - lastActivityTime > timeout)
+            {
+                return;
             }
         }
     }
@@ -227,26 +245,35 @@ public class ServerUDP
 
     private static void HandleError(Exception ex)
     {
-        if (ex is ClientErrorMessageException clientError)
+        switch (ex)
         {
-            MessageService.Logging($"[Error] Client Error → {clientError.Message}");
-        }
-        else
-        {
-            try
-            {
-                MessageService.Logging($"[Error] {ex.GetType().Name} → {ex.Message}");
+            case ClientErrorMessageException clientError:
+                MessageService.Logging($"[Error] Client Error ✖ {clientError.Message}");
+                Console.WriteLine("");
+                break;
 
-                string errorMsg = $"[Error] {ex.Message}";
-                byte[] errorMessage = MessageService.serializeMessage(9999, MessageType.Error, errorMsg);
-                MessageService.sendMessage(_serverSocket, errorMessage, 9999, MessageType.Error, errorMsg);
-            }
-            catch
-            {
-                MessageService.Logging("[Error] → Failed to send error message to client.");
-            }
+            case ClientDisconnectedException disconnect:
+                MessageService.Logging($"[Error] Connection with Client ended ✖ {disconnect.Message}");
+                Console.WriteLine("");
+                break;
+
+            default:
+                try
+                {
+                    MessageService.Logging($"[Error] {ex.GetType().Name} → {ex.Message}");
+
+                    string errorMsg = $"[Error] {ex.Message}";
+                    byte[] errorMessage = MessageService.serializeMessage(9999, MessageType.Error, errorMsg);
+                    MessageService.sendMessage(_serverSocket, errorMessage, 9999, MessageType.Error, errorMsg);
+                }
+                catch
+                {
+                    MessageService.Logging("[Error] → Failed to send error message to client.");
+                }
+                break;
         }
     }
+
 }
 
 public static class MessageService
@@ -303,6 +330,10 @@ public static class MessageService
 
             return message;
         }
+        catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionReset)
+        {            
+            throw new ClientDisconnectedException("Client disconnected.");
+        }
         catch (SocketException ex)
         {
             throw new Exception("Socket error while receiving message: " + ex.Message);
@@ -312,6 +343,8 @@ public static class MessageService
             throw new Exception("Invalid JSON format received: " + ex.Message);
         }
     }
+
+
 
     public static void Logging(string message)
     {
@@ -331,4 +364,9 @@ public class ClientErrorMessageException : Exception
     public ClientErrorMessageException(string message) : base(message)
     {
     }
+}
+
+public class ClientDisconnectedException : Exception
+{
+    public ClientDisconnectedException(string message) : base(message) { }
 }
