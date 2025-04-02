@@ -239,6 +239,19 @@ class ClientUDP
         Logging($"[Outgoing] → MsgId: {ack.MsgId}, MsgType: {ack.MsgType}, Content: MsgId: {ack.Content}");
     }
       
+
+    //private static void SendEnd()
+    //{
+    //    var message = new Message
+    //    {
+    //        MsgId = 8888,
+    //        MsgType = MessageType.End,
+    //        Content = "No messages more to send"
+    //    };
+    //    SendMessage(message);
+    //    Logging($"[Outgoing] → MsgId: {message.MsgId}, MsgType: {message.MsgType}, Content: {message.Content}");
+    //}
+
     private static string SerializeMessage(Message message)
     {
         return JsonSerializer.Serialize(message);
