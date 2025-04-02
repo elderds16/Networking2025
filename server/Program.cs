@@ -116,7 +116,6 @@ public class ServerUDP
         {
             MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: Hello, Content: {receivedMessage.Content}");
             helloReceived = true;
-
         }
         else
         {
@@ -136,7 +135,6 @@ public class ServerUDP
         byte[] sendMessage = MessageService.serializeMessage(receivedMessage.MsgId, MessageType.Welcome, content);
         MessageService.sendMessage(_serverSocket, sendMessage, receivedMessage.MsgId, MessageType.Welcome, content);
         welcomeSent = true;
-
     }
 
     // TODO:[Receive and print DNSLookup]
@@ -177,7 +175,7 @@ public class ServerUDP
                 }                
                 catch (Exception ex)
                 {
-                    HandleError(ex); // log het, maar blijf luisteren
+                    HandleError(ex);
                 }
             }
             else if (DateTime.UtcNow - lastActivityTime > timeout)
@@ -240,7 +238,6 @@ public class ServerUDP
         {
             throw new InvalidOperationException("[Error] Failed to send End message to client.", ex);
         }
-
     }
 
     private static void HandleError(Exception ex)
@@ -343,7 +340,6 @@ public static class MessageService
             throw new Exception("Invalid JSON format received: " + ex.Message);
         }
     }
-
 
 
     public static void Logging(string message)
