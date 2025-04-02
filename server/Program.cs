@@ -341,7 +341,6 @@ public static class MessageService
         }
     }
 
-
     public static void Logging(string message)
     {
         if (!string.IsNullOrEmpty(message))
