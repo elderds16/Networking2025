@@ -126,35 +126,12 @@ class ClientUDP
                     MsgType = MessageType.DNSLookup,
                     Content = "unknown.domain"
                 },
+                
                 new Message
                 {
                     MsgId = 104,
                     MsgType = MessageType.DNSLookup,
-                    Content = new DNSRecord { Type = "A", Name = "" }
-                },
-                new Message
-                {
-                    MsgId = 105,
-                    MsgType = MessageType.DNSLookup,
-                    Content = new DNSRecord { Type = "", Name = "www.test.com" }
-                },
-                new Message
-                {
-                    MsgId = 106,
-                    MsgType = MessageType.DNSLookup,
-                    Content = new DNSRecord { Type = "", Name = "" }
-                },
-                new Message
-                {
-                    MsgId = 107,
-                    MsgType = MessageType.DNSLookup,
-                    Content = "invalid-nonobject-content"
-                },
-                new Message
-                {
-                    MsgId = 108,
-                    MsgType = MessageType.DNSLookup,
-                    Content = new DNSRecord { Type = "MX", Name = "exampleZ.com" }
+                    Content = new DNSRecord { Type = "MX", Name = "abcdefg.com" }
                 }
             };
     }

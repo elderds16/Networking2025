@@ -45,9 +45,6 @@ public class ServerUDP
     private static byte[] _buffer = new byte[1024];
     private static Message receivedMessage;
 
-    private static bool helloReceived = false;
-    private static bool welcomeSent = false;
-
     private static HashSet<int> sentReplyIds = new();
     private static HashSet<int> ackedReplyIds = new();
 
@@ -64,10 +61,7 @@ public class ServerUDP
             while (true)
             {
                 try
-                {
-                    //helloReceived = false;
-                    //welcomeSent = false;
-
+                {                  
                     ReceiveHello();
                     SendWelcome();
                     HandleLookUps();
@@ -115,8 +109,7 @@ public class ServerUDP
 
         if (receivedMessage.MsgType == MessageType.Hello)
         {
-            MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: Hello, Content: {receivedMessage.Content}");
-            //helloReceived = true;
+            MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: Hello, Content: {receivedMessage.Content}");        
         }
         else
         {
@@ -134,10 +127,7 @@ public class ServerUDP
 
         string content = "Welcome from server";
         byte[] sendMessage = MessageService.serializeMessage(receivedMessage.MsgId, MessageType.Welcome, content);
-        MessageService.sendMessage(_serverSocket, sendMessage, receivedMessage.MsgId, MessageType.Welcome, content);
-        //welcomeSent = true;
-        //if (!helloReceived || !welcomeSent)
-        //    throw new InvalidOperationException("[Protocol Error] Received DNS-related messages before handshake completed.");
+        MessageService.sendMessage(_serverSocket, sendMessage, receivedMessage.MsgId, MessageType.Welcome, content);   
     }
 
     // TODO:[Receive and print DNSLookup]
@@ -191,7 +181,7 @@ public class ServerUDP
             }
             else if (DateTime.UtcNow - lastActivityTime > timeout)
             {
-                MessageService.Logging("[Info] ⏱ Timeout reached — no more DNS lookups from client.");
+                MessageService.Logging("Timeout reached — no more DNS lookups from client.");
                 break;
             }
         }
@@ -212,12 +202,12 @@ public class ServerUDP
                     int ackedId = JsonSerializer.Deserialize<int>(message.Content.ToString());
                     ackedReplyIds.Add(ackedId);
                     MessageService.Logging($"[ACKnowledged] ← Ack for MsgId: {ackedId}");
-                    return; // ACK gekregen → klaar
+                    return; 
                 }
                 else if (message.MsgType == MessageType.Error)
                 {
                     MessageService.Logging($"[Client Error] ← {message.Content}");
-                    return; // Client heeft zelf een fout gestuurd
+                    return; 
                 }
                 else
                 {
@@ -226,14 +216,12 @@ public class ServerUDP
             }
         }
 
-        // ❌ Geen ACK ontvangen binnen de tijd
         string errorContent = $"No ACK or Error received for MsgId: {originalMsgId}";
         MessageService.Logging($"[Timeout] ⚠ {errorContent}");
 
         byte[] errorMsg = MessageService.serializeMessage(9999, MessageType.Error, errorContent);
         MessageService.sendMessage(_serverSocket, errorMsg, 9999, MessageType.Error, errorContent);
 
-        // 🚫 NIET returnen → gewoon doorgaan met volgende DNSLookup
     }
 
 
@@ -284,8 +272,8 @@ public class ServerUDP
     // TODO:[If no further requests receieved send End to the client]
     private static void SendEnd()
     {
-        // ⏳ Geef client nog even tijd om laatste ACKs of errors te sturen
-        TimeSpan gracePeriod = TimeSpan.FromMilliseconds(3300); // bijvoorbeeld 1.5 seconde
+   
+        TimeSpan gracePeriod = TimeSpan.FromMilliseconds(3000); 
         DateTime waitUntil = DateTime.UtcNow + gracePeriod;
 
         while (DateTime.UtcNow < waitUntil)
@@ -337,7 +325,6 @@ public class ServerUDP
             throw new InvalidOperationException("[Error] Failed to send End message to client.", ex);
         }
     }
-
 
 
     private static void HandleError(Exception ex)
