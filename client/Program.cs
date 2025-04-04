@@ -97,9 +97,12 @@ class ClientUDP
         }
         else
         {
-            Logging($"[Incoming] ← Unexpected Message, Expected: Welcome, Got MsgId: {message.MsgId}, MsgType: {message.MsgType}, Content: {message.Content}");
+            throw new MessageTypeMismatchException(
+                $"Expected message type 'Welcome', but got '{message.MsgType}'. MsgId: {message.MsgId}, Content: {message.Content}"
+            );
         }
     }
+
 
     private static List<Message> CreateDnsLookupMessages()
     {

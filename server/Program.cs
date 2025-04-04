@@ -50,6 +50,7 @@ public class ServerUDP
 
     private static HashSet<int> sentReplyIds = new();
     private static HashSet<int> ackedReplyIds = new();
+
     private static DateTime lastActivityTime;
     private static TimeSpan timeout = TimeSpan.FromMilliseconds(200);
 
@@ -64,8 +65,8 @@ public class ServerUDP
             {
                 try
                 {
-                    helloReceived = false;
-                    welcomeSent = false;
+                    //helloReceived = false;
+                    //welcomeSent = false;
 
                     ReceiveHello();
                     SendWelcome();
@@ -115,7 +116,7 @@ public class ServerUDP
         if (receivedMessage.MsgType == MessageType.Hello)
         {
             MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: Hello, Content: {receivedMessage.Content}");
-            helloReceived = true;
+            //helloReceived = true;
         }
         else
         {
@@ -134,16 +135,17 @@ public class ServerUDP
         string content = "Welcome from server";
         byte[] sendMessage = MessageService.serializeMessage(receivedMessage.MsgId, MessageType.Welcome, content);
         MessageService.sendMessage(_serverSocket, sendMessage, receivedMessage.MsgId, MessageType.Welcome, content);
-        welcomeSent = true;
+        //welcomeSent = true;
+        //if (!helloReceived || !welcomeSent)
+        //    throw new InvalidOperationException("[Protocol Error] Received DNS-related messages before handshake completed.");
     }
 
     // TODO:[Receive and print DNSLookup]
     private static void HandleLookUps()
     {
-        if (!helloReceived || !welcomeSent)
-            throw new InvalidOperationException("[Protocol Error] Received DNS-related messages before handshake completed.");
-
         lastActivityTime = DateTime.UtcNow;
+        sentReplyIds.Clear();
+        ackedReplyIds.Clear();
 
         while (true)
         {
@@ -154,25 +156,34 @@ public class ServerUDP
                     receivedMessage = MessageService.receiveMessage(_serverSocket, _buffer);
                     lastActivityTime = DateTime.UtcNow;
 
-                    switch (receivedMessage.MsgType)
+                    if (receivedMessage.MsgType == MessageType.DNSLookup)
                     {
-                        case MessageType.DNSLookup:
-                            var slimContent = JsonSerializer.Serialize(receivedMessage.Content);
-                            MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: DNSLookup, Content: {slimContent}");
-                            HandleSingleLookup();
-                            break;
+                        var content = JsonSerializer.Serialize(receivedMessage.Content);
+                        MessageService.Logging($"[Incoming] ← MsgId: {receivedMessage.MsgId}, MsgType: DNSLookup, Content: {content}");
 
-                        case MessageType.Ack:
-                            int ackedId = JsonSerializer.Deserialize<int>(receivedMessage.Content.ToString());
-                            ackedReplyIds.Add(ackedId);
-                            MessageService.Logging($"[ACKnowledged] ← Ack for MsgId: {ackedId}");
-                            break;
+                        bool replySent = HandleSingleLookup();
 
-                        default:
-                            MessageService.Logging($"[Error] Unexpected message type: {receivedMessage.MsgType}");
-                            break;
+                        if (replySent)
+                        {
+                            sentReplyIds.Add(receivedMessage.MsgId);
+                            WaitForAckOrError(receivedMessage.MsgId);
+                        }
                     }
-                }                
+                    else if (receivedMessage.MsgType == MessageType.Ack)
+                    {
+                        int ackedId = JsonSerializer.Deserialize<int>(receivedMessage.Content.ToString());
+                        ackedReplyIds.Add(ackedId);
+                        MessageService.Logging($"[ACKnowledged] ← Ack for MsgId: {ackedId}");
+                    }
+                    else if (receivedMessage.MsgType == MessageType.Error)
+                    {
+                        MessageService.Logging($"[Client Error] ← {receivedMessage.Content}");
+                    }
+                    else
+                    {
+                        MessageService.Logging($"[Warning] Unexpected message type: {receivedMessage.MsgType}");
+                    }
+                }
                 catch (Exception ex)
                 {
                     HandleError(ex);
@@ -180,14 +191,58 @@ public class ServerUDP
             }
             else if (DateTime.UtcNow - lastActivityTime > timeout)
             {
-                return;
+                MessageService.Logging("[Info] ⏱ Timeout reached — no more DNS lookups from client.");
+                break;
             }
         }
     }
 
+    private static void WaitForAckOrError(int originalMsgId)
+    {
+        DateTime start = DateTime.UtcNow;
+
+        while (DateTime.UtcNow - start < timeout)
+        {
+            if (_serverSocket.Poll(100_000, SelectMode.SelectRead))
+            {
+                var message = MessageService.receiveMessage(_serverSocket, _buffer);
+
+                if (message.MsgType == MessageType.Ack)
+                {
+                    int ackedId = JsonSerializer.Deserialize<int>(message.Content.ToString());
+                    ackedReplyIds.Add(ackedId);
+                    MessageService.Logging($"[ACKnowledged] ← Ack for MsgId: {ackedId}");
+                    return; // ACK gekregen → klaar
+                }
+                else if (message.MsgType == MessageType.Error)
+                {
+                    MessageService.Logging($"[Client Error] ← {message.Content}");
+                    return; // Client heeft zelf een fout gestuurd
+                }
+                else
+                {
+                    MessageService.Logging($"[Warning] Unexpected MsgType: {message.MsgType} while waiting for Ack/Error for MsgId: {originalMsgId}");
+                }
+            }
+        }
+
+        // ❌ Geen ACK ontvangen binnen de tijd
+        string errorContent = $"No ACK or Error received for MsgId: {originalMsgId}";
+        MessageService.Logging($"[Timeout] ⚠ {errorContent}");
+
+        byte[] errorMsg = MessageService.serializeMessage(9999, MessageType.Error, errorContent);
+        MessageService.sendMessage(_serverSocket, errorMsg, 9999, MessageType.Error, errorContent);
+
+        // 🚫 NIET returnen → gewoon doorgaan met volgende DNSLookup
+    }
+
+
+
+
+
     // TODO:[Query the DNSRecord in Json file]
     // TODO:[If found Send DNSLookupReply containing the DNSRecord]
-    private static void HandleSingleLookup()
+    private static bool HandleSingleLookup()
     {
         try
         {
@@ -206,10 +261,10 @@ public class ServerUDP
 
                 byte[] response = MessageService.serializeMessage(receivedMessage.MsgId, MessageType.DNSLookupReply, dnsRecord);
                 MessageService.sendDNSRecord(_serverSocket, response, receivedMessage.MsgId, MessageType.DNSLookupReply, dnsRecord);
+                return true;
             }
             else
             {
-                // TODO:[If not found Send Error]
                 throw new Exception("DNS record not found.");
             }
         }
@@ -221,15 +276,58 @@ public class ServerUDP
 
             byte[] errorMessage = MessageService.serializeMessage(9999, MessageType.Error, errorMsg);
             MessageService.sendMessage(_serverSocket, errorMessage, 9999, MessageType.Error, errorMsg);
+            return false;
         }
     }
+
 
     // TODO:[If no further requests receieved send End to the client]
     private static void SendEnd()
     {
+        // ⏳ Geef client nog even tijd om laatste ACKs of errors te sturen
+        TimeSpan gracePeriod = TimeSpan.FromMilliseconds(3300); // bijvoorbeeld 1.5 seconde
+        DateTime waitUntil = DateTime.UtcNow + gracePeriod;
+
+        while (DateTime.UtcNow < waitUntil)
+        {
+            if (_serverSocket.Poll(100_000, SelectMode.SelectRead))
+            {
+                try
+                {
+                    var message = MessageService.receiveMessage(_serverSocket, _buffer);
+
+                    if (message.MsgType == MessageType.Ack)
+                    {
+                        int ackedId = JsonSerializer.Deserialize<int>(message.Content.ToString());
+                        ackedReplyIds.Add(ackedId);
+                        MessageService.Logging($"[ACKnowledged-late] ← Late Ack for MsgId: {ackedId}");
+                    }
+                    else if (message.MsgType == MessageType.Error)
+                    {
+                        MessageService.Logging($"[Client Error - late] ← {message.Content}");
+                    }
+                    else
+                    {
+                        MessageService.Logging($"[Late Message] ← MsgType: {message.MsgType} ignored before End");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    HandleError(ex);
+                }
+            }
+        }
+
         try
         {
-            string content = "End Message. Client Closing. Server is still up and running!";
+            int totalSent = sentReplyIds.Count;
+            int totalAcked = ackedReplyIds.Count;
+
+            string note = totalSent == totalAcked
+                ? "All replies acknowledged."
+                : $"Warning: Not all replies were acknowledged. Sent: {totalSent}, Acked: {totalAcked}";
+
+            string content = $"End Message. Client Closing. Server is still up and running! {note}";
             byte[] sendMessage = MessageService.serializeMessage(8888, MessageType.End, content);
             MessageService.sendMessage(_serverSocket, sendMessage, 8888, MessageType.End, content);
             Console.WriteLine("");
@@ -239,6 +337,8 @@ public class ServerUDP
             throw new InvalidOperationException("[Error] Failed to send End message to client.", ex);
         }
     }
+
+
 
     private static void HandleError(Exception ex)
     {
